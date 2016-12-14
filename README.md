@@ -17,7 +17,7 @@ Add NfqSeoBundle in to your composer.json:
 	        },
 		],
     	"require": {
-        	"nfq-rho/seo-bundle": "dev-master"
+        	"nfq-rho/seo-bundle": "1.*"
     	}
 	}
 
