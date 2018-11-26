@@ -9,8 +9,7 @@
 
         "doctrine/orm": "~2.5",
         "doctrine/doctrine-bundle": "~1.4",
-        "behat/transliterator": "~1.1",
-        "tedivm/stash-bundle": "0.4.*"
+        "behat/transliterator": "~1.1"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master",
