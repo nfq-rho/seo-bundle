@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -24,12 +25,7 @@ trait SeoCache
      */
     private $cache;
 
-    /**
-     * Check if cache can be used
-     *
-     * @return bool
-     */
-    public function canCache()
+    public function canCache(): bool
     {
         return (!SeoHelper::isCli() && $this->cache);
     }

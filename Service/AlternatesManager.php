@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -21,43 +22,27 @@ use Symfony\Component\Routing\RouterInterface;
  */
 class AlternatesManager
 {
-    /**
-     * @var SeoManager
-     */
+    /** @var SeoManager */
     protected $sm;
 
-    /**
-     * @var RouterInterface
-     */
+    /** @var RouterInterface */
     protected $router;
 
-    /**
-     * @var array
-     */
-    protected $locales = [];
+    /**  @var array */
+    protected $locales;
 
-    /**
-     * @var array
-     */
-    protected $alternateLocaleMapping = [];
+    /** @var array */
+    protected $alternateLocaleMapping;
 
-    /**
-     * AlternateManager constructor.
-     * @param SeoManager $sm
-     * @param RouterInterface $router
-     * @param array $locales
-     */
     public function __construct(SeoManager $sm, RouterInterface $router, array $locales)
     {
         $this->sm = $sm;
         $this->router = $router;
         $this->locales = $locales;
+        $this->alternateLocaleMapping = [];
     }
 
-    /**
-     * @return array
-     */
-    public function getAlternateLocaleMapping()
+    public function getAlternateLocaleMapping(): array
     {
         return $this->alternateLocaleMapping;
     }
@@ -65,29 +50,24 @@ class AlternatesManager
     /**
      * Set mapped alternate urls, which are later switched. Example:
      *   en_GL => en_US
-     * en_GL locale will be mapped to en_US, so instead of en_GL, en_US will be showm
+     * en_GL locale will be mapped to en_US, so instead of en_GL, en_US will be shown
      *
      *
      * @param array $alternateLocaleMapping
      */
-    public function setAlternateLocaleMapping(array $alternateLocaleMapping)
+    public function setAlternateLocaleMapping(array $alternateLocaleMapping): void
     {
         $this->alternateLocaleMapping = $alternateLocaleMapping;
     }
 
-    /**
-     * @param SeoInterface $entity
-     * @param array $routeParams
-     * @return array
-     */
-    public function getLangAlternates(SeoInterface $entity, array $routeParams)
+    public function getLangAlternates(SeoInterface $entity, array $routeParams): array
     {
         $result = [];
 
         $currentLocale = $routeParams['_locale'];
         $currentAlternates = $this->sm->getRepository()->getAlternatesArray(
-            $entity->getRouteName(), 
-            $entity->getEntityId(), 
+            $entity->getRouteName(),
+            $entity->getEntityId(),
             $currentLocale
         );
 
@@ -105,11 +85,7 @@ class AlternatesManager
         );
     }
 
-    /**
-     * @param string $seoUrl
-     * @return string
-     */
-    protected function buildAlternateUrl($seoUrl, $locale)
+    protected function buildAlternateUrl($seoUrl): string
     {
         $scheme = $this->router->getContext()->getScheme();
         $host = $this->router->getContext()->getHost();
@@ -117,13 +93,7 @@ class AlternatesManager
         return $scheme . '://' . $host . $seoUrl;
     }
 
-    /**
-     * @param string $routeName
-     * @param array $params
-     * @param array $localesWithAlternates
-     * @return array
-     */
-    protected function generateLangAlternates($routeName, array $params, array $localesWithAlternates)
+    protected function generateLangAlternates(string $routeName, array $params, array $localesWithAlternates): array
     {
         $alternates = [];
         $alternatesToGenerate = array_diff($this->locales, $localesWithAlternates);
@@ -159,11 +129,7 @@ class AlternatesManager
         return $alternates;
     }
 
-    /**
-     * @param string $locale
-     * @return string
-     */
-    private function resolveAlternateUrlLocale($locale)
+    private function resolveAlternateUrlLocale(string $locale): string
     {
         if (array_key_exists($locale, $this->alternateLocaleMapping)) {
             $locale = $this->alternateLocaleMapping[$locale];

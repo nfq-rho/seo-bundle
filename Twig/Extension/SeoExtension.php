@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -51,46 +52,24 @@ class SeoExtension extends \Twig_Extension
         $this->translator = $translator;
     }
 
-    /**
-     * @param string $defaultLocale
-     */
-    public function setDefaultLocale($defaultLocale)
+    public function setDefaultLocale(string $defaultLocale): void
     {
         $this->defaultLocale = $defaultLocale;
     }
 
-    /**
-     * @param string $encoding
-     */
-    public function setEncoding($encoding)
+    public function setEncoding(string $encoding): void
     {
         $this->encoding = $encoding;
     }
 
-    /**
-     * @return array
-     */
-    public function getTokenParsers()
+    public function getTokenParsers(): array
     {
         return [
             new SeoTagTokenParser()
         ];
     }
 
-    /**
-     * Returns the name of the extension.
-     *
-     * @return string The extension name
-     */
-    public function getName()
-    {
-        return 'nfq_seo';
-    }
-
-    /**
-     * @return string
-     */
-    public function getTitle($title = null)
+    public function getTitle(string $title = null): string
     {
         if (empty($title)) {
             $title = $this->sp->getTitle();
@@ -104,11 +83,7 @@ class SeoExtension extends \Twig_Extension
         return sprintf('<title>%s</title>' . PHP_EOL, strip_tags($title));
     }
 
-    /**
-     * @param array $predefinedMetaTags
-     * @return string
-     */
-    public function getMetaTags(array $predefinedMetaTags = [])
+    public function getMetaTags(array $predefinedMetaTags = []): string
     {
         $html = '';
 
@@ -121,7 +96,7 @@ class SeoExtension extends \Twig_Extension
                     $content = $predefinedMetaTags[$name];
                     $extras = [];
                 } else {
-                    list($content, $extras) = $meta;
+                    [$content, $extras] = $meta;
                 }
 
                 if ($content === false) {
@@ -146,10 +121,7 @@ class SeoExtension extends \Twig_Extension
         return $html;
     }
 
-    /**
-     * @return string
-     */
-    public function getHtmlAttributes()
+    public function getHtmlAttributes(): string
     {
         $attributes = '';
         foreach ($this->sp->getHtmlAttributes() as $name => $value) {
@@ -159,10 +131,7 @@ class SeoExtension extends \Twig_Extension
         return rtrim($attributes);
     }
 
-    /**
-     * @return string
-     */
-    public function getHeadAttributes()
+    public function getHeadAttributes(): string
     {
         $attributes = '';
         $merged = array_merge($this->getDefaultHeadAttributes(), $this->sp->getHeadAttributes());
@@ -173,20 +142,14 @@ class SeoExtension extends \Twig_Extension
         return rtrim($attributes);
     }
 
-    /**
-     * @return array
-     */
-    private function getDefaultHeadAttributes()
+    private function getDefaultHeadAttributes(): array
     {
         return [
             'lang' => SeoHelper::getLangFromLocale($this->sp->getLocale(), $this->defaultLocale),
         ];
     }
 
-    /**
-     * @return string
-     */
-    public function getMetaLinks()
+    public function getMetaLinks(): string
     {
         $html = '';
 
@@ -197,10 +160,7 @@ class SeoExtension extends \Twig_Extension
         return $html;
     }
 
-    /**
-     * @return string
-     */
-    private function getLinkCanonical()
+    private function getLinkCanonical(): string
     {
         $canonical = $this->sp->getLinkCanonical();
 
@@ -214,10 +174,7 @@ class SeoExtension extends \Twig_Extension
         return '';
     }
 
-    /**
-     * @return string
-     */
-    private function getLangAlternates()
+    private function getLangAlternates(): string
     {
         $html = '';
 
@@ -233,10 +190,7 @@ class SeoExtension extends \Twig_Extension
         return $html;
     }
 
-    /**
-     * @return string
-     */
-    private function getNextPrevRels()
+    private function getNextPrevRels(): string
     {
         $html = '';
         $host = $this->sp->getHost();
@@ -260,11 +214,7 @@ class SeoExtension extends \Twig_Extension
         return $html;
     }
 
-    /**
-     * @param string $uri
-     * @return string
-     */
-    private function formatCanonicalUri($uri)
+    private function formatCanonicalUri(string $uri): string
     {
         $allowedQueryParams = $this->sp->getLinkOptions('allowed_canonical_parameters');
         $parsedQueryString = parse_url(rawurldecode($uri), PHP_URL_QUERY);
@@ -275,7 +225,7 @@ class SeoExtension extends \Twig_Extension
             parse_str($parsedQueryString, $parsedQueryStringArr);
             $allowedQueryStringArr = array_intersect_key($parsedQueryStringArr, $flippedParams);
 
-            list($uriPath,) = explode('?', $uri, 2);
+            [$uriPath,] = explode('?', $uri, 2);
 
             return SeoHelper::getUri($uriPath, $allowedQueryStringArr);
         }
@@ -283,19 +233,17 @@ class SeoExtension extends \Twig_Extension
         return $uri;
     }
 
-    /**
-     * @param $string
-     * @param array $extras
-     * @return string
-     */
-    private function normalize($string, $extras = [])
+    private function normalize(string $string, array $extras = []): string
     {
         if (isset($extras['translatable']) && $extras['translatable'] === true) {
             $string = $this->translator->trans($string, $extras);
         }
 
-        $string = str_replace('%simple_host%', $this->sp->getSimpleHost(), $string);
-        $string = str_replace('%host%', $this->sp->getHost(), $string);
+        $string = str_replace(
+            ['%simple_host%', '%host%'],
+            [$this->sp->getSimpleHost(), $this->sp->getHost()],
+            $string
+        );
 
         return htmlspecialchars(strip_tags($string), ENT_COMPAT, $this->encoding);
     }

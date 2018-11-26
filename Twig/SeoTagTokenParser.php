@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -20,11 +21,7 @@ class SeoTagTokenParser extends \Twig_TokenParser
 
     private $tagClose = 'endnfqseo';
 
-    /**
-     * @param \Twig_Token $token
-     * @throws \Twig_Error_Syntax
-     */
-    public function parse(\Twig_Token $token)
+    public function parse(\Twig_Token $token): \Twig_Nod
     {
         $lineNo = $token->getLine();
         $stream = $this->parser->getStream();
@@ -74,7 +71,7 @@ class SeoTagTokenParser extends \Twig_TokenParser
      * @param \Twig_Token $token
      * @return array
      */
-    protected function getInlineParams(\Twig_Token $token)
+    protected function getInlineParams(\Twig_Token $token): array
     {
         $stream = $this->parser->getStream();
         $params = array();
@@ -92,18 +89,12 @@ class SeoTagTokenParser extends \Twig_TokenParser
      * @param \Twig_Token $token
      * @return bool
      */
-    public function decideNfqSeoTagFork(\Twig_Token $token)
+    public function decideNfqSeoTagFork(\Twig_Token $token): bool
     {
         return $token->test(array($this->tagClose));
     }
 
-    /**
-     * Your tag name: if the parsed tag match the one you put here, your parse()
-     * method will be called.
-     *
-     * @return string
-     */
-    public function getTag()
+    public function getTag(): string
     {
         return $this->tagOpen;
     }

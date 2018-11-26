@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -26,21 +27,13 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
 {
     use LoggerAwareTrait;
 
-    /**
-     * @var EntityManagerInterface
-     */
+    /** @var EntityManagerInterface */
     private $em;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $currentRouteName;
 
-    /**
-     * @param \Exception $exception
-     * @param array $payload
-     */
-    protected function logException(\Exception $exception, array $payload)
+    protected function logException(\Exception $exception, array $payload): void
     {
         if (!$this->logger) {
             throw new \RuntimeException('Set logger service for generator');
@@ -52,10 +45,7 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
         );
     }
 
-    /**
-     * @return SeoSlugInterface
-     */
-    protected function getSeoSlug()
+    protected function getSeoSlug(): SeoSlugInterface
     {
         $seoSlug = new SeoSlug();
         $seoSlug->setRouteName($this->getCurrentRouteName());
@@ -63,27 +53,18 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
         return $seoSlug;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setCurrentRouteName($routeName)
+    public function setCurrentRouteName(string $routeName): SeoGeneratorInterface
     {
         $this->currentRouteName = $routeName;
         return $this;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getCurrentRouteName()
+    public function getCurrentRouteName(): string
     {
         return $this->currentRouteName;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setEntityManager(EntityManagerInterface $em)
+    public function setEntityManager(EntityManagerInterface $em): SeoGeneratorInterface
     {
         $this->em = $em;
         return $this;
@@ -92,23 +73,19 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
     /**
      * @inheritdoc
      */
-    public function getEntityManager()
+    public function getEntityManager(): EntityManagerInterface
     {
         return $this->em;
     }
 
-    /**
-     * @param array $params
-     * @param array $params2
-     * @param array $params3
-     * @return array
-     */
-    protected function buildAllowedQueryParams(array $params, array $params2 = [], array $params3 = [])
+    protected function buildAllowedQueryParams(array ...$queryParams)
     {
         $allowedParams = $this->getAllowedQueryParams();
         $allowedParams = array_merge(['path' => true], $allowedParams);
 
-        $arrays = array_replace_recursive($params, $params2, $params3);
+        $params = array_unshift($queryParams);
+
+        $arrays = array_replace_recursive($params, ...$queryParams);
 
         $recIteratorIt = new \RecursiveIteratorIterator(
             new \RecursiveArrayIterator($allowedParams),
@@ -167,8 +144,11 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
      * @param array $params contains all available parameters for that request
      * @return mixed
      */
-    protected function setMissingAllowedParameters(array $allowedParams, array $allowedNotSetPaths, array $params)
-    {
+    protected function setMissingAllowedParameters(
+        array $allowedParams,
+        array $allowedNotSetPaths,
+        array $params
+    ): array {
         return $allowedParams;
     }
 }

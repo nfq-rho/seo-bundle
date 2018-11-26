@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -21,13 +22,13 @@ class SeoUtils
      * @param array $filter
      * @return mixed
      */
-    public static function recursiveUnsetExisting(array $data, array $filter)
+    public static function recursiveUnsetExisting(array $data, array $filter): array
     {
-        $recursiveUnsetExisting = function (array $data, $filter, $deep = 0) use (&$recursiveUnsetExisting) {
+        $recursiveUnsetExisting = function (array $data, $filter, $deep = 0) use (&$recursiveUnsetExisting): array {
             foreach ($data as $k => $v) {
-                if (is_array($v)) {
+                if (\is_array($v)) {
                     $data[$k] = isset($filter[$k]) ? $recursiveUnsetExisting($data[$k], $filter[$k],
-                        ($deep + 1)) : $data[$k];
+                        $deep + 1) : $data[$k];
                 } else {
                     if (isset($filter[$k])) {
                         $data[$k] = null;
@@ -50,14 +51,14 @@ class SeoUtils
      * @param array $arr2 An array to compare keys against.
      * @return array
      */
-    public static function diffKeyRecursive(array $arr1, array $arr2)
+    public static function diffKeyRecursive(array $arr1, array $arr2): array
     {
-        $diffKeyRecursive = function (array $arr1, array $arr2) use (&$diffKeyRecursive) {
+        $diffKeyRecursive = function (array $arr1, array $arr2) use (&$diffKeyRecursive): array {
             $diff = array_diff_key($arr1, $arr2);
             $intersect = array_intersect_key($arr1, $arr2);
 
             foreach ($intersect as $k => $v) {
-                if (is_array($arr1[$k]) && is_array($arr2[$k])) {
+                if (\is_array($arr1[$k]) && \is_array($arr2[$k])) {
                     $d = $diffKeyRecursive($arr1[$k], $arr2[$k]);
 
                     if ($d) {

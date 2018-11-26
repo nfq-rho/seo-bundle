@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -17,19 +18,20 @@ use Nfq\SeoBundle\DependencyInjection\Compiler\SeoInvalidatorsCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
+/**
+ * Class NfqSeoBundle
+ * @package Nfq\SeoBundle
+ */
 class NfqSeoBundle extends Bundle
 {
-    /**
-     * @param ContainerBuilder $container
-     */
-    public function build(ContainerBuilder $container)
+    public function build(ContainerBuilder $container): void
     {
         $container->addCompilerPass(new OverrideRoutingCompilerPass());
 
         parent::build($container);
 
-        $container->addCompilerPass(new CacheServiceCompilerPass());
-        $container->addCompilerPass(new SeoGeneratorsCompilerPass());
-        $container->addCompilerPass(new SeoInvalidatorsCompilerPass());
+//        $container->addCompilerPass(new CacheServiceCompilerPass());
+//        $container->addCompilerPass(new SeoGeneratorsCompilerPass());
+//        $container->addCompilerPass(new SeoInvalidatorsCompilerPass());
     }
 }

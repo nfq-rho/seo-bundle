@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -64,10 +65,7 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         ];
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    public function onKernelRequest(GetResponseEvent $event)
+    public function onKernelRequest(GetResponseEvent $event): void
     {
         //We're only interested in master requests
         if (!$event->isMasterRequest() || $this->isDebugRequest($event->getRequest())) {
@@ -110,10 +108,7 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         return $this->seoData;
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    private function handleSeoRedirect(GetResponseEvent $event)
+    private function handleSeoRedirect(GetResponseEvent $event): void
     {
         $request = $event->getRequest();
 
