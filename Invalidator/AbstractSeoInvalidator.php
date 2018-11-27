@@ -70,7 +70,7 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
     protected function executeInvalidation(InvalidationObjectInterface $invalidationObject): void
     {
         if (!$invalidationObject->hasChanges()) {
-            return $this;
+            return;
         }
 
         $queryString = $this->getInvalidationQueryString($invalidationObject);
