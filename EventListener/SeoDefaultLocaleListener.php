@@ -25,24 +25,9 @@ class SeoDefaultLocaleListener implements EventSubscriberInterface
     /** @var string */
     protected $defaultLocale;
 
-    public function __construct($defaultLocale)
+    public function __construct(string $defaultLocale)
     {
         $this->defaultLocale = $defaultLocale;
-    }
-
-    public function onKernelRequest(GetResponseEvent $event): void
-    {
-        if (empty($this->defaultLocale)) {
-            return;
-        }
-
-        $request = $event->getRequest();
-        $this->setLocale($request);
-    }
-
-    private function setLocale(Request $request): void
-    {
-        $request->setDefaultLocale($this->defaultLocale);
     }
 
     public static function getSubscribedEvents(): array
@@ -50,5 +35,30 @@ class SeoDefaultLocaleListener implements EventSubscriberInterface
         return [
             KernelEvents::REQUEST => ['onKernelRequest', 33],
         ];
+    }
+
+    public function onKernelRequest(GetResponseEvent $event): void
+    {
+        if (!$event->isMasterRequest()) {
+            return;
+        }
+
+        $request = $event->getRequest();
+        $pathInfo = $request->getPathInfo();
+
+        $request->setDefaultLocale($this->defaultLocale);
+
+        if (null !== $locale = $this->extractLocaleFromPath($pathInfo)) {
+            $request->setDefaultLocale($locale);
+        }
+    }
+
+    private function extractLocaleFromPath(string $pathInfo): ?string
+    {
+        if (preg_match('/^\/([a-z]{2})\/.*/', $pathInfo, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
     }
 }
