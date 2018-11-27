@@ -53,13 +53,13 @@ trait SeoConfig
         return $this->config['exception_message'];
     }
 
-    public function setMissingUrlStrategy(string $strategy): self
+    public function setMissingUrlStrategy(?string $strategy): self
     {
         $this->config['missing_url_strategy'] = $strategy;
         return $this;
     }
 
-    public function getMissingUrlStrategy(): string
+    public function getMissingUrlStrategy(): ?string
     {
         return $this->config['missing_url_strategy'];
     }

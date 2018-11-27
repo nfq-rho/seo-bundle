@@ -176,7 +176,9 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
                 throw $ex;
             }
 
-            $seoUrl = $this->applyMissingUrlStrategy($parameters, $stdUrlParsed);
+            if (null === $seoUrl = $this->applyMissingUrlStrategy($parameters, $stdUrlParsed)) {
+                $seoUrl = $stdUrl;
+            }
         }
 
         return $seoUrl;
@@ -184,16 +186,15 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
 
     /**
      * @param string[] $routeParams
-     * @param string[] $parsedStdParams
-     * @return string
+     * @param string[] $stdUrlParsed
      */
-    private function applyMissingUrlStrategy(array $routeParams, array $parsedStdParams): string
+    private function applyMissingUrlStrategy(array $routeParams, array $stdUrlParsed): ?string
     {
-        $result = '';
+        $result = null;
 
         switch ($this->getMissingUrlStrategy()) {
             case 'callback':
-                $result = call_user_func_array([$this->sm, 'resolveMissingUrl'], [$routeParams, $parsedStdParams]);
+                $result = call_user_func_array([$this->sm, 'resolveMissingUrl'], [$routeParams, $stdUrlParsed]);
                 break;
             case 'empty_host':
                 $result = sprintf('%s://%s%s/',
@@ -209,6 +210,9 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
                     80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : '',
                     $routeParams['_locale']
                 );
+                break;
+            case 'empty':
+                $result = '';
                 break;
             case 'ignore':
                 $result = '#';
@@ -445,4 +449,5 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
             );
         }
     }
+
 }
