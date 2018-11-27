@@ -196,11 +196,19 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
                 $result = call_user_func_array([$this->sm, 'resolveMissingUrl'], [$routeParams, $parsedStdParams]);
                 break;
             case 'empty_host':
-                $result = $this->getContext()->getScheme() . '://' . $this->getContext()->getHost() . '/';
+                $result = sprintf('%s://%s%s/',
+                    $this->getContext()->getScheme(),
+                    $this->getContext()->getHost(),
+                    80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : ''
+                );
                 break;
             case 'empty_host_with_locale':
-                $result = $this->getContext()->getScheme() . '://' . $this->getContext()->getHost()
-                    . '/' . $routeParams['_locale'] . '/';
+                $result = sprintf('%s://%s%s/%s/',
+                    $this->getContext()->getScheme(),
+                    $this->getContext()->getHost(),
+                    80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : '',
+                    $routeParams['_locale']
+                );
                 break;
             case 'ignore':
                 $result = '#';
@@ -346,7 +354,14 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
 
                 ($matchData instanceof Request) && $matchData->attributes->set('__nfq_seo', [
                     'entity' => $stdUrl,
-                    'url' => $this->getContext()->getScheme() . '://' . $this->getContext()->getHost() . $stdUrl->getSeoUrl(),
+                    'url' => sprintf('%s://%s%s%s',
+                        $this->getContext()->getScheme(),
+                        $this->getContext()->getHost(),
+                        80 !== $this->getContext()->getHttpPort()
+                            ? ':' . $this->getContext()->getHttpPort()
+                            : '',
+                        $stdUrl->getSeoUrl()
+                    ),
                     'alternates' => $this->locator->get('nfq_seo.alt_manager')->getLangAlternates($stdUrl,
                         $routeParams),
                 ]);

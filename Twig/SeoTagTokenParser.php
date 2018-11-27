@@ -21,7 +21,7 @@ class SeoTagTokenParser extends \Twig_TokenParser
 
     private $tagClose = 'endnfqseo';
 
-    public function parse(\Twig_Token $token): \Twig_Nod
+    public function parse(\Twig_Token $token): \Twig_Node
     {
         $lineNo = $token->getLine();
         $stream = $this->parser->getStream();

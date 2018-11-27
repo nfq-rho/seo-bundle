@@ -22,30 +22,18 @@ use Symfony\Component\Translation\TranslatorInterface;
  */
 class SeoExtension extends \Twig_Extension
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     private $defaultLocale;
 
-    /**
-     * @var string
-     */
+    /**  @var string */
     private $encoding;
 
-    /**
-     * @var SeoPageInterface
-     */
+    /** @var SeoPageInterface */
     private $sp;
 
-    /**
-     * @var TranslatorInterface
-     */
+    /** @var TranslatorInterface */
     private $translator;
 
-    /**
-     * @param SeoPageInterface $sp
-     * @param TranslatorInterface $translator
-     */
     public function __construct(SeoPageInterface $sp, TranslatorInterface $translator)
     {
         $this->sp = $sp;
