@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -20,56 +21,38 @@ use Nfq\SeoBundle\Invalidator\Object\InvalidationObjectInterface;
  */
 abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     private $currentRouteName;
 
-    /**
-     * @var EntityManagerInterface
-     */
+    /** @var EntityManagerInterface */
     private $em;
 
-    /**
-     * @inheritdoc
-     */
-    public function getRouteName()
+    public function getRouteName(): string
     {
         return $this->currentRouteName;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setRouteName($routeName)
+    public function setRouteName(string $routeName): SeoInvalidatorInterface
     {
         $this->currentRouteName = $routeName;
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setEntityManager(EntityManagerInterface $em)
+    public function setEntityManager(EntityManagerInterface $em): SeoInvalidatorInterface
     {
         $this->em = $em;
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getEntityManager()
+    public function getEntityManager(): EntityManagerInterface
     {
         return $this->em;
     }
 
     /**
-     * @param InvalidationObjectInterface $invalidationObject
-     * @return $this
      * @throws \Doctrine\DBAL\DBALException
      */
-    protected function executeRemoval(InvalidationObjectInterface $invalidationObject)
+    protected function executeRemoval(InvalidationObjectInterface $invalidationObject): void
     {
         $statement = 'DELETE FROM seo_urls WHERE route_name = :routeName AND entity_id = :entityId';
 
@@ -79,16 +62,12 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
         ];
 
         $this->executeStatement($statement, $whereParams);
-
-        return $this;
     }
 
     /**
-     * @param InvalidationObjectInterface $invalidationObject
-     * @return $this
      * @throws \Doctrine\DBAL\DBALException
      */
-    protected function executeInvalidation(InvalidationObjectInterface $invalidationObject)
+    protected function executeInvalidation(InvalidationObjectInterface $invalidationObject): void
     {
         if (!$invalidationObject->hasChanges()) {
             return $this;
@@ -109,16 +88,13 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
         });
 
         $this->executeStatement($queryString, $whereParams);
-
-        return $this;
     }
 
     /**
-     * @param string $queryString
-     * @param array $params
+     * @param string[] $params
      * @throws \Doctrine\DBAL\DBALException
      */
-    protected function executeStatement($queryString, $params)
+    protected function executeStatement(string $queryString, array $params): void
     {
         $stmt = $this->getEntityManager()->getConnection()->prepare($queryString);
         $stmt->execute($params);
@@ -128,12 +104,8 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
     /**
      * Builds invalidation query based on given invalidation object. The invalidation is executed only
      * for active urls.
-     *
-     * @param InvalidationObjectInterface $invalidationObject
-     * @return string
-     * @throws \Exception
      */
-    private function getInvalidationQueryString(InvalidationObjectInterface $invalidationObject)
+    private function getInvalidationQueryString(InvalidationObjectInterface $invalidationObject): string
     {
         $query = 'UPDATE seo_urls su ';
 

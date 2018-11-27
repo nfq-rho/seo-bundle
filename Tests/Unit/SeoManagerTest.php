@@ -14,7 +14,7 @@ use Doctrine\ORM\EntityManager;
 use Mockery as m;
 use Nfq\SeoBundle\Entity\Seo;
 use Nfq\SeoBundle\Entity\SeoInterface;
-use Nfq\SeoBundle\Entity\SeoRepository;
+use Nfq\SeoBundle\Repository\SeoRepository;
 use Nfq\SeoBundle\Generator\SeoGeneratorManager;
 use Nfq\SeoBundle\Model\SeoSlug;
 use Nfq\SeoBundle\Service\SeoManager;

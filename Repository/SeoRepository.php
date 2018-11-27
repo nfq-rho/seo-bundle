@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -8,56 +9,40 @@
  * file that was distributed with this source code.
  */
 
-namespace Nfq\SeoBundle\Entity;
+namespace Nfq\SeoBundle\Repository;
 
-use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\QueryBuilder;
+use Nfq\AdminBundle\Repository\ServiceEntityRepository;
+use Nfq\SeoBundle\Entity\Seo;
+use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Exception\DuplicateException;
 use Nfq\SeoBundle\Utils\SeoHelper;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
  * Class SeoRepository
  * @package Nfq\SeoBundle\Entity
  */
-class SeoRepository extends EntityRepository
+class SeoRepository extends ServiceEntityRepository
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $alias = 'seo';
 
-    /**
-     * @param string $alias
-     */
-    public function setAlias($alias)
+    /** @var string */
+    protected $entityClass = Seo::class;
+
+    public function __construct(RegistryInterface $registry)
     {
-        $this->alias = $alias;
+        parent::__construct($registry, $this->entityClass);
     }
 
-    /**
-     * @return string
-     */
-    public function getAlias()
+    public function getAlias(): string
     {
         return $this->alias;
     }
 
-    /**
-     * @return SeoInterface
-     */
-    public function createNew()
-    {
-        $class = $this->getClassName();
-
-        return new $class();
-    }
-
-    /**
-     * @return QueryBuilder
-     */
-    public function getSimpleQueryBuilder()
+    public function getSimpleQueryBuilder(): QueryBuilder
     {
         $qb = $this->_em->createQueryBuilder()
             ->select($this->getAlias())
@@ -66,13 +51,7 @@ class SeoRepository extends EntityRepository
         return $qb;
     }
 
-    /**
-     * @param string $routeName
-     * @param int $entityId
-     * @param string $requestLocale
-     * @return array
-     */
-    public function getAlternatesArray($routeName, $entityId, $requestLocale)
+    public function getAlternatesArray(string $routeName, int $entityId, string $requestLocale): array
     {
         $qb = $this->getSimpleQueryBuilder();
         $qb->select(['seo.locale', 'seo.seoUrl'])
@@ -90,12 +69,7 @@ class SeoRepository extends EntityRepository
         return $qb->getQuery()->getArrayResult();
     }
 
-    /**
-     * @param string $seoHash
-     * @param string $locale
-     * @return Seo|null
-     */
-    public function getEntityBySeoHash($seoHash, $locale)
+    public function getEntityBySeoHash(string $seoHash, string $locale): ?SeoInterface
     {
         try {
             $qb = $this->getSimpleQueryBuilder();
@@ -119,11 +93,9 @@ class SeoRepository extends EntityRepository
     /**
      * Only one URL with status `OK` can exist, but there might be more than one url with status `INVALIDATED`
      *
-     * @param string $stdHash
-     * @return Seo|null
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function getEntityByStdHash($stdHash)
+    public function getEntityByStdHash(string $stdHash): ?SeoInterface
     {
         $qb = $this->createQueryBuilder('su')
             ->where('su.stdPathHash = :slugHash AND su.status = :status')
@@ -137,12 +109,10 @@ class SeoRepository extends EntityRepository
     /**
      * Check if SEO entity is unique.
      *
-     * @param SeoInterface $entity
-     * @return SeoInterface|null
      * @throws DuplicateException
      * @throws NonUniqueResultException
      */
-    public function isUnique(SeoInterface $entity)
+    public function isUnique(SeoInterface $entity): ?SeoInterface
     {
         $query = $this->createQueryBuilder('su')
             ->where('su.seoPathHash = :seoPathHash and su.status = :status AND su.locale = :locale AND su.seoUrl = :seoUrl')
@@ -170,14 +140,12 @@ class SeoRepository extends EntityRepository
         return $existingUrl;
     }
 
-    /**
-     * @param SeoInterface $seoUrlExisting
-     * @param SeoInterface $seoUrlNew
-     * @param int $iteration
-     * @param string $slugSeparator
-     */
-    public function makeUnique(SeoInterface $seoUrlExisting, SeoInterface $seoUrlNew, $iteration, $slugSeparator)
-    {
+    public function makeUnique(
+        SeoInterface $seoUrlExisting,
+        SeoInterface $seoUrlNew,
+        int $iteration,
+        string $slugSeparator
+    ): void {
         $pattern = '~-(?P<uid>[0-9]+)$~';
         $match = [];
         $isMatch = preg_match($pattern, $seoUrlExisting->getSeoUrl(), $match, PREG_OFFSET_CAPTURE);
@@ -202,11 +170,7 @@ class SeoRepository extends EntityRepository
         $seoUrlNew->setSeoPathHash(SeoHelper::generateHash($seoUrlNew->getSeoUrl()));
     }
 
-    /**
-     * @param SeoInterface $entity
-     * @return int
-     */
-    public function save(SeoInterface $entity)
+    public function save(SeoInterface $entity): int
     {
         $sql = <<<SQL
 INSERT INTO seo_urls (`seo_path_hash`, `std_path_hash`, `locale`, `route_name`, `entity_id`, `seo_url`, `std_url`, `status`, `timestamp`) 
@@ -237,11 +201,7 @@ SQL;
         return $stmt->rowCount();
     }
 
-    /**
-     * @param SeoInterface $entity
-     * @throws \Doctrine\DBAL\DBALException
-     */
-    public function handleDuplicate(SeoInterface $entity)
+    public function handleDuplicate(SeoInterface $entity): void
     {
         $sql = <<<SQL
 UPDATE seo_urls SET `std_path_hash` = ?, `std_url` = ?, `status` = ? WHERE `seo_path_hash` = ? AND `route_name` = ? AND `entity_id` = ? AND `locale` = ?

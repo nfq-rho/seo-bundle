@@ -26,12 +26,12 @@ class NfqSeoBundle extends Bundle
 {
     public function build(ContainerBuilder $container): void
     {
-        $container->addCompilerPass(new OverrideRoutingCompilerPass());
+//        $container->addCompilerPass(new OverrideRoutingCompilerPass());
 
         parent::build($container);
 
 //        $container->addCompilerPass(new CacheServiceCompilerPass());
-//        $container->addCompilerPass(new SeoGeneratorsCompilerPass());
-//        $container->addCompilerPass(new SeoInvalidatorsCompilerPass());
+        $container->addCompilerPass(new SeoGeneratorsCompilerPass());
+        $container->addCompilerPass(new SeoInvalidatorsCompilerPass());
     }
 }

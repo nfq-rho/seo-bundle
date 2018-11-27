@@ -14,7 +14,7 @@ namespace Nfq\SeoBundle\Service;
 use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Entity\Seo;
 use Nfq\SeoBundle\Entity\SeoInterface;
-use Nfq\SeoBundle\Entity\SeoRepository;
+use Nfq\SeoBundle\Repository\SeoRepository;
 use Nfq\SeoBundle\Exception\DuplicateException;
 use Nfq\SeoBundle\Generator\SeoGeneratorManager;
 use Nfq\SeoBundle\Traits\SeoCache;
@@ -66,7 +66,7 @@ class SeoManager
         throw new \BadMethodCallException('Implement this method in extended class in order to use callback strategy');
     }
 
-    public function getStdUrl(string $seoPath, string $locale): SeoInterface
+    public function getStdUrl(string $seoPath, string $locale): ?SeoInterface
     {
         $seoHash = SeoHelper::generateHash($seoPath);
 
@@ -182,7 +182,8 @@ class SeoManager
 
     public function buildEntity(SeoSlug $seoSlug, array $hashParams): SeoInterface
     {
-        $seoUrl = $this->getRepository()->createNew();
+        /** @var SeoInterface $seoUrl */
+        $seoUrl = $this->getRepository()->createEntity();
 
         $seoUrlStr = SeoHelper::glueUrl($seoSlug, $this->getPathSeparator(), $this->getSlugSeparator());
         $seoHashStr = SeoHelper::generateHash($seoUrlStr);

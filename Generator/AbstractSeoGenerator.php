@@ -64,10 +64,9 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
         return $this->currentRouteName;
     }
 
-    public function setEntityManager(EntityManagerInterface $em): SeoGeneratorInterface
+    public function setEntityManager(EntityManagerInterface $em): void
     {
         $this->em = $em;
-        return $this;
     }
 
     /**
@@ -83,7 +82,7 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
         $allowedParams = $this->getAllowedQueryParams();
         $allowedParams = array_merge(['path' => true], $allowedParams);
 
-        $params = array_unshift($queryParams);
+        $params = array_shift($queryParams);
 
         $arrays = array_replace_recursive($params, ...$queryParams);
 

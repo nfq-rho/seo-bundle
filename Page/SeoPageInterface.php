@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,27 +11,16 @@
 
 namespace Nfq\SeoBundle\Page;
 
+/**
+ * Interface SeoPageInterface
+ * @package Nfq\SeoBundle\Page
+ */
 interface SeoPageInterface
 {
-    /**
-     * @const string
-     */
-    const SEO_REL_NEXT = 'next';
-
-    /**
-     * @const string
-     */
-    const SEO_REL_PREV = 'prev';
-
-    /**
-     * @const string
-     */
-    const SEO_REL_ALTERNATE = 'alternate';
-
-    /**
-     * @const string
-     */
-    const SEO_REL_CANONICAL = 'canonical';
+    public const SEO_REL_NEXT = 'next';
+    public const SEO_REL_PREV = 'prev';
+    public const SEO_REL_ALTERNATE = 'alternate';
+    public const SEO_REL_CANONICAL = 'canonical';
 
     /**
      * @param string $host

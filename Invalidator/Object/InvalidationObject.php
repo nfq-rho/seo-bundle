@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -18,38 +19,25 @@ use Nfq\SeoBundle\Entity\SeoInterface;
  */
 abstract class InvalidationObject implements InvalidationObjectInterface
 {
-    /**
-     * @var array
-     */
+    /** @var array */
     protected $changeSet = [];
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $hasChanges = false;
 
-    /**
-     * @var object
-     */
+    /** @var object */
     private $entity;
 
-    /**
-     * @var string|null
-     */
-    protected $locale = null;
+    /** @var string|null */
+    private $locale = null;
 
     /**
      * Get an array of attribute names which should cause invalidation when modified.
      *
-     * @return array
+     * @return string[]
      */
-    abstract protected function getInvalidationAttributes();
+    abstract protected function getInvalidationAttributes(): array;
 
-    /**
-     * InvalidationObject constructor.
-     * @param object $entity
-     * @param array $changeSet
-     */
     public function __construct($entity, array $changeSet)
     {
         $this->changeSet = $changeSet;
@@ -62,42 +50,27 @@ abstract class InvalidationObject implements InvalidationObjectInterface
         $this->checkForChanges();
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getLocale()
+    public function getLocale(): string
     {
         return $this->locale;
     }
 
-    /**
-     * @inheritdoc
-     */
     public function getEntity()
     {
         return $this->entity;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function hasChanges()
+    public function hasChanges(): bool
     {
         return $this->hasChanges;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getInvalidationStatus()
+    public function getInvalidationStatus(): int
     {
         return SeoInterface::STATUS_REDIRECT;
     }
 
-    /**
-     * @inheritdoc
-     */
-    protected function checkForChanges()
+    protected function checkForChanges(): void
     {
         $flippedInvalidationAttributes = array_flip($this->getInvalidationAttributes());
 

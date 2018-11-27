@@ -28,10 +28,10 @@ class AlternatesManager
     /** @var RouterInterface */
     protected $router;
 
-    /**  @var array */
+    /** @var string[] */
     protected $locales;
 
-    /** @var array */
+    /** @var string[] */
     protected $alternateLocaleMapping;
 
     public function __construct(SeoManager $sm, RouterInterface $router, array $locales)
@@ -42,6 +42,9 @@ class AlternatesManager
         $this->alternateLocaleMapping = [];
     }
 
+    /**
+     * @return string[]
+     */
     public function getAlternateLocaleMapping(): array
     {
         return $this->alternateLocaleMapping;
@@ -53,7 +56,7 @@ class AlternatesManager
      * en_GL locale will be mapped to en_US, so instead of en_GL, en_US will be shown
      *
      *
-     * @param array $alternateLocaleMapping
+     * @param string[] $alternateLocaleMapping
      */
     public function setAlternateLocaleMapping(array $alternateLocaleMapping): void
     {
@@ -85,7 +88,7 @@ class AlternatesManager
         );
     }
 
-    protected function buildAlternateUrl($seoUrl): string
+    protected function buildAlternateUrl(string $seoUrl): string
     {
         $scheme = $this->router->getContext()->getScheme();
         $host = $this->router->getContext()->getHost();

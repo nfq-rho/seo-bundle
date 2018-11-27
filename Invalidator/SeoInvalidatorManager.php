@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,32 +11,19 @@
 
 namespace Nfq\SeoBundle\Invalidator;
 
-use Nfq\SeoBundle\Traits\SeoConfig;
-
 /**
  * Class SeoInvalidatorManager
  * @package Nfq\SeoBundle\Invalidator
  */
 class SeoInvalidatorManager
 {
-    use SeoConfig;
-
-    /**
-     * @var SeoInvalidatorInterface[]
-     */
+    /** @var SeoInvalidatorInterface[] */
     private $invalidators = [];
 
-    /**
-     * @var array
-     */
+    /** @var string[] */
     private $routeEntityMap = [];
 
-    /**
-     * @param SeoInvalidatorInterface $invalidator
-     * @param string $routeName
-     * @param string $entityClass
-     */
-    public function addInvalidator(SeoInvalidatorInterface $invalidator, $routeName, $entityClass)
+    public function addInvalidator(SeoInvalidatorInterface $invalidator, string $routeName, string $entityClass): void
     {
         if (!isset($this->invalidators[$routeName])) {
             $this->invalidators[$routeName] = $invalidator;
@@ -45,12 +33,9 @@ class SeoInvalidatorManager
     }
 
     /**
-     * @param string $entityClass
-     * @return SeoInvalidatorInterface
-     *
      * @throws \InvalidArgumentException
      */
-    public function getInvalidator($entityClass)
+    public function getInvalidator(string $entityClass): SeoInvalidatorInterface
     {
         foreach($this->routeEntityMap as $routeName => $invalidatorClasses) {
             if (false !== $idx = array_search($entityClass, $invalidatorClasses)) {
@@ -64,12 +49,9 @@ class SeoInvalidatorManager
     /**
      * Map paths to type
      *
-     * @param string $type
-     * @param string $entityClass
-     *
      * @throws \InvalidArgumentException
      */
-    private function addToRouteEntityMap($type, $entityClass)
+    private function addToRouteEntityMap(string $type, string $entityClass): void
     {
         if (isset($this->routeEntityMap[$type]) && in_array($entityClass, $this->routeEntityMap[$type])) {
             throw new \InvalidArgumentException("Duplicated entity `{$entityClass}` for type `{$type}` detected");

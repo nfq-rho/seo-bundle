@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -18,9 +19,8 @@ interface ObjectFactoryInterface
 {
     /**
      * @param object $entity
-     * @param array $changeSet
-     * @return InvalidationObjectInterface
+     * @param string[] $changeSet
      * @throws \InvalidArgumentException
      */
-    public static function buildInvalidationObject($entity, array $changeSet);
+    public static function buildInvalidationObject($entity, array $changeSet): InvalidationObjectInterface;
 }

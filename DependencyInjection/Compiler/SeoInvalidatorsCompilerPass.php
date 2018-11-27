@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,6 +11,8 @@
 
 namespace Nfq\SeoBundle\DependencyInjection\Compiler;
 
+use Nfq\SeoBundle\Invalidator\SeoInvalidatorManager;
+use Nfq\SeoBundle\Routing\SeoRouter;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -20,17 +23,14 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class SeoInvalidatorsCompilerPass implements CompilerPassInterface
 {
-    /**
-     * @param ContainerBuilder $container
-     */
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasDefinition('nfq_seo.router')) {
+        if (!$container->hasDefinition(SeoRouter::class)) {
             return;
         }
 
-        $definition = $container->getDefinition('nfq_seo.url_invalidator_manager');
-        foreach ($container->findTaggedServiceIds('seo.invalidator') as $id => $attributes) {
+        $definition = $container->getDefinition(SeoInvalidatorManager::class);
+        foreach ($container->findTaggedServiceIds('nfq_seo.invalidator') as $id => $attributes) {
             foreach ($attributes as $attribute) {
                 $invalidatorDef = $container->getDefinition($id);
                 $invalidatorDef->setLazy(true);

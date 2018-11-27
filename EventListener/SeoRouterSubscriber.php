@@ -28,35 +28,22 @@ use Symfony\Component\HttpKernel\Event\GetResponseEvent;
  */
 class SeoRouterSubscriber implements EventSubscriberInterface
 {
-    /**
-     * @var array
-     */
+    /** @var array */
     private $seoData;
 
-    /**
-     * @var SeoManager
-     */
+    /** @var SeoManager */
     private $sm;
 
-    /**
-     * @var SeoPageInterface
-     */
+    /** @var SeoPageInterface */
     private $sp;
 
-    /**
-     * @param SeoManager $sm
-     * @param SeoPageInterface $sp
-     */
-    public function __construct($sm, SeoPageInterface $sp)
+    public function __construct(SeoManager $sm, SeoPageInterface $sp)
     {
         $this->sm = $sm;
         $this->sp = $sp;
     }
 
-    /**
-     * @return array
-     */
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             KernelEvents::REQUEST => [
@@ -136,10 +123,7 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         $this->issueRedirect($event, $seoUrlRedirect);
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    private function handleStdToSeo(GetResponseEvent $event)
+    private function handleStdToSeo(GetResponseEvent $event): void
     {
         $request = $event->getRequest();
 
@@ -167,10 +151,7 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         $this->issueRedirect($event, $seoUrl);
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    private function setSeoPageData(GetResponseEvent $event)
+    private function setSeoPageData(GetResponseEvent $event): void
     {
         $request = $event->getRequest();
 
@@ -202,40 +183,23 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         $this->sp->setLangAlternates($seoData['alternates']);
     }
 
-    /**
-     * @param string $path
-     * @param string $queryString
-     * @return string
-     */
-    private function getFullUri($path, $queryString)
+    private function getFullUri(string $path, ?string $queryString): string
     {
         return $path . (!$queryString ? '' : '?' . $queryString);
     }
 
-    /**
-     * @param Request $request
-     * @return bool
-     */
-    private function isDebugRequest(Request $request)
+    private function isDebugRequest(Request $request): bool
     {
-        return in_array($request->attributes->get('_route'), ['_wdt']);
+        return \in_array($request->attributes->get('_route'), ['_wdt'], true);
     }
 
-    /**
-     * @param ParameterBag $requestAttributes
-     * @return bool
-     */
-    private function isSeoRequestAsStd($requestAttributes)
+    private function isSeoRequestAsStd($requestAttributes): bool
     {
         return !$requestAttributes->has('__nfq_seo')
             && $this->sm->getGeneratorManager()->isRouteRegistered($requestAttributes->get('_route'));
     }
 
-    /**
-     * @param GetResponseEvent $event
-     * @param SeoInterface $seoUrl
-     */
-    private function issueRedirect(GetResponseEvent $event, SeoInterface $seoUrl)
+    private function issueRedirect(GetResponseEvent $event, SeoInterface $seoUrl): void
     {
         /**
          * @TODO: remove params from $requestQueryString which are in $seoUrl->getStdUrl()

@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -21,23 +22,15 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class SeoDefaultLocaleListener implements EventSubscriberInterface
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $defaultLocale;
 
-    /**
-     * @param string $defaultLocale
-     */
-    public function setDefaultLocale($defaultLocale)
+    public function __construct($defaultLocale)
     {
         $this->defaultLocale = $defaultLocale;
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    public function onKernelRequest(GetResponseEvent $event)
+    public function onKernelRequest(GetResponseEvent $event): void
     {
         if (empty($this->defaultLocale)) {
             return;
@@ -47,18 +40,12 @@ class SeoDefaultLocaleListener implements EventSubscriberInterface
         $this->setLocale($request);
     }
 
-    /**
-     * @param Request $request
-     */
-    private function setLocale(Request $request)
+    private function setLocale(Request $request): void
     {
         $request->setDefaultLocale($this->defaultLocale);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             KernelEvents::REQUEST => ['onKernelRequest', 33],

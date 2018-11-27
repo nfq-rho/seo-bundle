@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -21,23 +22,15 @@ use Nfq\SeoBundle\Invalidator\SeoInvalidatorManager;
  */
 class SeoInvalidateSubscriber implements EventSubscriber
 {
-    /**
-     * @var SeoInvalidatorManager
-     */
+    /** @var SeoInvalidatorManager */
     private $invalidatorManager;
 
-    /**
-     * @param SeoInvalidatorManager $si
-     */
     public function __construct(SeoInvalidatorManager $invalidatorManager)
     {
         $this->invalidatorManager = $invalidatorManager;
     }
 
-    /**
-     * @return array
-     */
-    public function getSubscribedEvents()
+    public function getSubscribedEvents(): array
     {
         return [
             'postPersist',
@@ -46,34 +39,22 @@ class SeoInvalidateSubscriber implements EventSubscriber
         ];
     }
 
-    /**
-     * @param LifecycleEventArgs $event
-     */
-    public function postPersist(LifecycleEventArgs $event)
+    public function postPersist(LifecycleEventArgs $event): void
     {
         $this->invalidate($event);
     }
 
-    /**
-     * @param LifecycleEventArgs $event
-     */
-    public function postUpdate(LifecycleEventArgs $event)
+    public function postUpdate(LifecycleEventArgs $event): void
     {
         $this->invalidate($event);
     }
 
-    /**
-     * @param LifecycleEventArgs $event
-     */
-    public function preRemove(LifecycleEventArgs $event)
+    public function preRemove(LifecycleEventArgs $event): void
     {
         $this->remove($event);
     }
 
-    /**
-     * @param LifecycleEventArgs $event
-     */
-    private function remove(LifecycleEventArgs $event)
+    private function remove(LifecycleEventArgs $event): void
     {
         $entity = $event->getEntity();
 
@@ -88,10 +69,7 @@ class SeoInvalidateSubscriber implements EventSubscriber
         }
     }
     
-    /**
-     * @param $event
-     */
-    private function invalidate(LifecycleEventArgs $event)
+    private function invalidate(LifecycleEventArgs $event): void
     {
         $entity = $event->getEntity();
 
@@ -108,14 +86,8 @@ class SeoInvalidateSubscriber implements EventSubscriber
         }
     }
 
-    /**
-     * @param $entity
-     * @return SeoInvalidatorInterface
-     */
-    private function getInvalidator($entity)
+    private function getInvalidator($entity): SeoInvalidatorInterface
     {
-        $entityClass = get_class($entity);
-
-        return $this->invalidatorManager->getInvalidator($entityClass);
+        return $this->invalidatorManager->getInvalidator(\get_class($entity));
     }
 }

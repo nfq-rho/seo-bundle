@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -18,37 +19,21 @@ interface InvalidationObjectInterface
 {
     /**
      * Where part by default has following query "su.route_name = :route_name AND su.locale = :locale"
-     * @return string
      */
-    public function getWherePart();
+    public function getWherePart(): string;
 
-    /**
-     * @return string
-     */
-    public function getJoinPart();
+    public function getJoinPart(): string;
 
-    /**
-     * @return array
-     */
-    public function getWhereParams();
+    public function getWhereParams(): array;
 
     /**
      * @return object
      */
     public function getEntity();
 
-    /**
-     * @return string
-     */
-    public function getLocale();
+    public function getLocale(): string;
 
-    /**
-     * @return boolean
-     */
-    public function hasChanges();
+    public function hasChanges(): bool;
 
-    /**
-     * @return int
-     */
-    public function getInvalidationStatus();
+    public function getInvalidationStatus(): int;
 }

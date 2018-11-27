@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -16,73 +17,43 @@ namespace Nfq\SeoBundle\Model;
  */
 interface SeoSlugInterface
 {
-    /**
-     * @param string $routeName
-     * @return $this
-     */
-    public function setRouteName($routeName);
+    public function setRouteName(string $routeName): SeoSlugInterface;
 
-    /**
-     * @return string
-     */
-    public function getRouteName();
+    public function getRouteName(): string;
 
-    /**
-     * @param string $prefix
-     * @return $this
-     */
-    public function setPrefix($prefix);
+    public function setPrefix(string $prefix): SeoSlugInterface;
 
-    /**
-     * @return string
-     */
-    public function getPrefix();
+    public function getPrefix(): string;
 
-    /**
-     * @param string $entityId
-     * @return $this
-     */
-    public function setEntityId($entityId = null);
+    public function setEntityId(int $entityId = null): SeoSlugInterface;
 
-    /**
-     * @return string
-     */
-    public function getEntityId();
+    public function getEntityId(): int;
 
-    /**
-     * @param string $locale
-     * @return $this
-     */
-    public function setLocale($locale);
+    public function setLocale(string $locale): SeoSlugInterface;
 
-    /**
-     * @return string
-     */
-    public function getLocale();
+    public function getLocale(): string;
 
     /**
      * Route parts for seo url, which are later glued together. The order of these parts
      * is important.
-     *  
      *
-     * @param array $parts
+     * @param string[] $parts
+     */
+    public function setRouteParts(array $parts): SeoSlugInterface;
+
+    /**
+     * @return string[]
+     */
+    public function getRouteParts(): array;
+
+    /**
+     * @param string[] $parts
      * @return $this
      */
-    public function setRouteParts(array $parts);
+    public function setQueryParts(array $parts): SeoSlugInterface;
 
     /**
-     * @return array
+     * @return string[]
      */
-    public function getRouteParts();
-
-    /**
-     * @param array $parts
-     * @return $this
-     */
-    public function setQueryParts(array $parts);
-
-    /**
-     * @return array
-     */
-    public function getQueryParts();
+    public function getQueryParts(): array;
 }

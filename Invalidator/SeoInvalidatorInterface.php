@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -18,46 +19,26 @@ use Doctrine\ORM\EntityManagerInterface;
  */
 interface SeoInvalidatorInterface
 {
-    /**
-     * @param string $routeName
-     * @return $this
-     */
-    public function setRouteName($routeName);
+    public function setRouteName(string $routeName): SeoInvalidatorInterface;
 
-    /**
-     * @return string
-     */
-    public function getRouteName();
+    public function getRouteName(): string;
 
-    /**
-     * Get entity manager.
-     *
-     * @return EntityManagerInterface
-     */
-    public function getEntityManager();
+    public function getEntityManager(): EntityManagerInterface;
 
-    /**
-     * Set entity manager.
-     *
-     * @param EntityManagerInterface $em
-     * @return $this
-     */
-    public function setEntityManager(EntityManagerInterface $em);
+    public function setEntityManager(EntityManagerInterface $em): SeoInvalidatorInterface;
 
     /**
      * Invalidate seo url for given entity based on given change-set
      *
      * @param object $entity
-     * @param array $changeSet
-     * @return $this
+     * @param string[] $changeSet
      */
-    public function invalidate($entity, array $changeSet);
+    public function invalidate($entity, array $changeSet): void;
 
     /**
      * Remove seo urls for given entity
      *
      * @param object $entity
-     * @return $this
      */
-    public function remove($entity);
+    public function remove($entity): void;
 }

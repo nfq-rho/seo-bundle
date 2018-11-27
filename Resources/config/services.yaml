@@ -1,59 +1,27 @@
-parameters:
-    nfq_seo.url_manager.class: Nfq\SeoBundle\Service\SeoManager
-    nfq_seo.alternates_manager.class: Nfq\SeoBundle\Service\AlternatesManager
-    nfq_seo.twig.extension.class: Nfq\SeoBundle\Twig\Extension\SeoExtension
-    nfq_seo.page.default.class: Nfq\SeoBundle\Page\SeoPage
-    nfq_seo.exception_controller.class: Nfq\SeoBundle\Controller\ExceptionController
-    nfq_seo.default_locale_subscriber.class: Nfq\SeoBundle\EventListener\SeoDefaultLocaleListener
-
 services:
-    nfq_seo.default_locale_subscriber:
-        class: '%nfq_seo.default_locale_subscriber.class%'
-        tags:
-            - { name: kernel.event_subscriber }
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
 
-    nfq_seo.router_subscriber:
-        class: Nfq\SeoBundle\EventListener\SeoRouterSubscriber
-        arguments: [ '@nfq_seo.url_manager', '@nfq_seo.page' ]
-        tags:
-            - { name: kernel.event_subscriber }
+        bind:
+            $debug: '%kernel.debug%'
+            $defaultLocale: '%nfq_seo.default_locale%'
+            $locales: '%locales%'
 
-    nfq_seo.invalidate_subscriber:
-        class: Nfq\SeoBundle\EventListener\SeoInvalidateSubscriber
-        arguments: [ '@nfq_seo.url_invalidator_manager' ]
+    Nfq\SeoBundle\:
+        resource: '../../*'
+        exclude: '../../{DependencyInjection,Entity,Exception,Model,Tests,Utils,NfqSeoBundle.php}'
+
+    Nfq\SeoBundle\Controller\:
+        resource: '../../Controller'
+        tags: ['controller.service_arguments']
+
+    Nfq\SeoBundle\EventListener\SeoInvalidateSubscriber:
         tags:
             - { name: doctrine.event_subscriber }
 
-    nfq_seo.router:
-        class: Nfq\SeoBundle\Routing\SeoRouter
-        arguments: [ '@nfq_seo.router.parent', '%kernel.debug%' ]
-        calls:
-            - [setSeoManager, [ '@nfq_seo.url_manager' ]]
-            - [setAlternatesManager, [ '@nfq_seo.alternates_manager' ]]
-
-    nfq_seo.url_manager:
-        class: '%nfq_seo.url_manager.class%'
-        arguments: [ '@nfq_seo.url_generator_manager', '@doctrine.orm.entity_manager' ]
-
-    nfq_seo.alternates_manager:
-        class: '%nfq_seo.alternates_manager.class%'
-        arguments: [ '@nfq_seo.url_manager', '@router', '%locales%' ]
-
-    nfq_seo.url_generator_manager:
-        class: Nfq\SeoBundle\Generator\SeoGeneratorManager
-
-    nfq_seo.url_invalidator_manager:
-        class: Nfq\SeoBundle\Invalidator\SeoInvalidatorManager
-
-    nfq_seo.twig_extension:
-        class: '%nfq_seo.twig.extension.class%'
-        arguments: [ '@nfq_seo.page', '@translator' ]
-        tags:
-            - { name: twig.extension }
-
-    nfq_seo.page.default:
-        class: '%nfq_seo.page.default.class%'
-
-    nfq_seo.exception_controller:
-        class: '%nfq_seo.exception_controller.class%'
-        arguments: [ '@twig', '%kernel.debug%' ]
+    Nfq\SeoBundle\Routing\SeoRouter:
+        decorates: 'router.default'
+        arguments:
+            $router: '@Nfq\SeoBundle\Routing\SeoRouter.inner'
