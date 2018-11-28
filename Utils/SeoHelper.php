@@ -63,11 +63,11 @@ class SeoHelper
         array_walk(
             $params,
             function (&$item) use ($slugSep, $needTransliteration) {
-                if (is_array($item)) {
+                if (\is_array($item)) {
                     $item = implode($slugSep, $item);
                 }
 
-                $item = mb_strtolower(trim($item), 'UTF-8');
+                $item = mb_strtolower(trim((string)$item), 'UTF-8');
 
                 $item = $needTransliteration
                     ? self::transliterate($item, $slugSep)
