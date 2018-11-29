@@ -8,6 +8,7 @@
     "type": "symfony-bundle",
     "require": {
         "php": ">=7.2",
+        "symfony/cache": "^3.3|^4.0",
         "symfony/framework-bundle": "^3.3|^4.0",
         "behat/transliterator": "^1.2"
     },
