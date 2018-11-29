@@ -117,8 +117,11 @@ class AlternatesManager
         foreach ($alternatesToGenerate as $locale) {
             $altLocale = $this->resolveAlternateUrlLocale($locale);
 
-            $url = $this->router->generate($routeName, array_merge($params, ['_locale' => $locale]),
-                UrlGeneratorInterface::ABSOLUTE_URL);
+            $url = $this->router->generate(
+                $routeName,
+                array_merge($params, ['_locale' => $locale]),
+                UrlGeneratorInterface::ABSOLUTE_URL
+            );
 
             if ($url == '#' || empty($url)) {
                 continue;

@@ -35,7 +35,13 @@ class SeoGeneratorsCompilerPass implements CompilerPassInterface
                 $generatorDef = $container->getDefinition($id);
                 $generatorDef->setLazy(true);
 
-                $definition->addMethodCall('addGenerator', [new Reference($id), $attribute['route_name']]);
+                $definition->addMethodCall(
+                    'addGenerator',
+                    [
+                        new Reference($id),
+                        $attribute['route_name']
+                    ]
+                );
             }
         }
     }

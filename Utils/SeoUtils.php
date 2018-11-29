@@ -27,8 +27,11 @@ class SeoUtils
         $recursiveUnsetExisting = function (array $data, $filter, $deep = 0) use (&$recursiveUnsetExisting): array {
             foreach ($data as $k => $v) {
                 if (\is_array($v)) {
-                    $data[$k] = isset($filter[$k]) ? $recursiveUnsetExisting($data[$k], $filter[$k],
-                        $deep + 1) : $data[$k];
+                    $data[$k] = isset($filter[$k]) ? $recursiveUnsetExisting(
+                        $data[$k],
+                        $filter[$k],
+                        $deep + 1
+                    ) : $data[$k];
                 } else {
                     if (isset($filter[$k])) {
                         $data[$k] = null;

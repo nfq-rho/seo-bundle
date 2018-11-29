@@ -34,10 +34,15 @@ class SeoInvalidatorsCompilerPass implements CompilerPassInterface
             foreach ($attributes as $attribute) {
                 $invalidatorDef = $container->getDefinition($id);
                 $invalidatorDef->setLazy(true);
-                $invalidatorDef->setPublic(false);
 
-                $definition->addMethodCall('addInvalidator',
-                    [new Reference($id), $attribute['route_name'], $attribute['entity']]);
+                $definition->addMethodCall(
+                    'addInvalidator',
+                    [
+                        new Reference($id),
+                        $attribute['route_name'],
+                        $attribute['entity']
+                    ]
+                );
             }
         }
     }

@@ -45,11 +45,13 @@ class SeoTagTokenParser extends \Twig_TokenParser
                 default:
                     throw new \Twig_Error_Syntax(
                         sprintf(
-                            'Unexpected end of template. Twig was looking for the following tags "%s" to close the "%s" block started at line %d)',
+                            'Unexpected end of template. Twig was looking for the following tags "%s"' +
+                            'to close the "%s" block started at line %d)',
                             $this->tagClose,
                             $this->tagOpen,
                             $lineNo
-                        ), -1
+                        ),
+                        -1
                     );
             }
 

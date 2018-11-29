@@ -130,7 +130,7 @@ abstract class AbstractSeoPage
     protected function addLinks($type, array $uris)
     {
         if (array_key_exists($type, $this->links)) {
-            foreach($uris as $key => $uri) {
+            foreach ($uris as $key => $uri) {
                 $this->addLink($type, $uri, $key);
             }
         }

@@ -153,7 +153,8 @@ class SeoExtension extends \Twig_Extension
         $canonical = $this->sp->getLinkCanonical();
 
         if (!empty($canonical)) {
-            return sprintf("<link rel=\"%s\" href=\"%s\" />\n",
+            return sprintf(
+                "<link rel=\"%s\" href=\"%s\" />\n",
                 SeoPageInterface::SEO_REL_CANONICAL,
                 $this->formatCanonicalUri($canonical)
             );
@@ -185,7 +186,8 @@ class SeoExtension extends \Twig_Extension
 
         $prev = $this->sp->getLinkPrevPage();
         if (!empty($prev)) {
-            $html .= sprintf("<link rel=\"%s\" href=\"%s\" />",
+            $html .= sprintf(
+                "<link rel=\"%s\" href=\"%s\" />",
                 SeoPageInterface::SEO_REL_PREV,
                 $this->formatCanonicalUri($host . $prev)
             );
@@ -193,7 +195,8 @@ class SeoExtension extends \Twig_Extension
 
         $next = $this->sp->getLinkNextPage();
         if (!empty($next)) {
-            $html .= sprintf("<link rel=\"%s\" href=\"%s\" />",
+            $html .= sprintf(
+                "<link rel=\"%s\" href=\"%s\" />",
                 SeoPageInterface::SEO_REL_NEXT,
                 $this->formatCanonicalUri($host . $next)
             );

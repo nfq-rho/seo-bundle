@@ -12,6 +12,7 @@
 namespace Nfq\SeoBundle\EventListener;
 
 use Nfq\SeoBundle\Entity\SeoInterface;
+use Nfq\SeoBundle\Entity\SeoUrl;
 use Nfq\SeoBundle\Service\SeoManager;
 use Nfq\SeoBundle\Page\SeoPageInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Symfony\Component\Routing\RouterInterface;
 
 /**
  * Class SeoRouterSubscriber
@@ -37,10 +39,14 @@ class SeoRouterSubscriber implements EventSubscriberInterface
     /** @var SeoPageInterface */
     private $sp;
 
-    public function __construct(SeoManager $sm, SeoPageInterface $sp)
+    /** @var RouterInterface */
+    private $router;
+
+    public function __construct(SeoManager $sm, SeoPageInterface $sp, RouterInterface $router)
     {
         $this->sm = $sm;
         $this->sp = $sp;
+        $this->router = $router;
     }
 
     public static function getSubscribedEvents(): array
@@ -143,12 +149,25 @@ class SeoRouterSubscriber implements EventSubscriberInterface
 
         $seoUrl = $this->sm->getActiveSeoUrl($request->attributes->get('_route'), $routeParameters);
 
-        //Send permanent redirect from standard to seo URL
         if (!$seoUrl) {
-            return;
+            $currentMissingUrlStrategy = $this->router->getMissingUrlStrategy();
+
+            $this->router->setMissingUrlStrategy(null);
+            $redirectToUrl = $this->router->generate($request->attributes->get('_route'), $routeParameters);
+
+            $this->router->setMissingUrlStrategy($currentMissingUrlStrategy);
+
+            if (!$redirectTo) {
+                return;
+            }
+        } else {
+            /**
+             * @TODO: remove params from $requestQueryString which are in $seoUrl->getStdUrl()
+             */
+            $redirectToUrl = $this->getFullUri($seoUrl->getSeoUrl(), $event->getRequest()->getQueryString());
         }
 
-        $this->issueRedirect($event, $seoUrl);
+        $this->issueRedirect($event, $redirectToUrl);
     }
 
     private function setSeoPageData(GetResponseEvent $event): void
@@ -183,6 +202,15 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         $this->sp->setLangAlternates($seoData['alternates']);
     }
 
+    private function issueRedirect(GetResponseEvent $event, string $url): void
+    {
+        $event->setResponse(
+            new RedirectResponse($url, 301)
+        );
+
+        $event->stopPropagation();
+    }
+
     private function getFullUri(string $path, ?string $queryString): string
     {
         return $path . (!$queryString ? '' : '?' . $queryString);
@@ -197,19 +225,5 @@ class SeoRouterSubscriber implements EventSubscriberInterface
     {
         return !$requestAttributes->has('__nfq_seo')
             && $this->sm->getGeneratorManager()->isRouteRegistered($requestAttributes->get('_route'));
-    }
-
-    private function issueRedirect(GetResponseEvent $event, SeoInterface $seoUrl): void
-    {
-        /**
-         * @TODO: remove params from $requestQueryString which are in $seoUrl->getStdUrl()
-         */
-        $event->setResponse(
-            new RedirectResponse(
-                $this->getFullUri($seoUrl->getSeoUrl(), $event->getRequest()->getQueryString()), 301
-            )
-        );
-
-        $event->stopPropagation();
     }
 }

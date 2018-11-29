@@ -43,29 +43,19 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
     /** @var ContainerInterface */
     private $locator;
 
-    /**
-     * @var RouterInterface|RequestMatcherInterface
-     */
+    /** @var RouterInterface|RequestMatcherInterface */
     private $router;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $currentLocale;
 
-    /**
-     * @var RequestContext
-     */
+    /** @var RequestContext */
     private $backedUpContext;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $defaultLocale;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $debug;
 
     /**
@@ -94,153 +84,6 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
     public function setDefaultLocale(string $defaultLocale): void
     {
         $this->defaultLocale = $defaultLocale;
-    }
-
-    /**
-     * @return SeoInterface|bool
-     */
-    public function getLastGeneratedSeoEntity()
-    {
-        return $this->lastGeneratedSeoEntity;
-    }
-
-    public function generate($name, $parameters = [], $absolute = UrlGeneratorInterface::ABSOLUTE_PATH): string
-    {
-        $seoUrl = '';
-        $stdUrlParsed = [];
-
-        try {
-            //Generates standard url
-            $stdUrl = $this->router->generate($name, $parameters, $absolute);
-
-            //Check if given route name is not registered as seo route
-            if (!$this->isSeoRoute($name)) {
-                return $stdUrl;
-            }
-
-            //Usually when generating url from twig, we do not specify locale, that is why we must
-            //explicitly set it
-            $this->setLocale($parameters);
-
-            //Building explicit $routeParameters array by adding some of control parameters
-            $stdUrlParsed = parse_url($stdUrl);
-            $routeParameters = array_merge(
-                $parameters,
-                [
-                    'path' => $stdUrlParsed['path'],
-                    '_std_query' => isset($stdUrlParsed['query']) ? $stdUrlParsed['query'] : '',
-                ]
-            );
-
-            $seoEntity = $this->locator->get('nfq_seo.seo_manager')->getActiveSeoUrl($name, $routeParameters);
-
-            //If active SEO url was not found, generate a new one and use it instead
-            if (!$seoEntity && false === ($seoEntity = $this->locator->get('nfq_seo.seo_manager')->createSeoUrl($name,
-                    $routeParameters))
-            ) {
-                throw new RouteNotFoundException();
-            }
-
-            $this->lastGeneratedSeoEntity = $seoEntity;
-            $seoUrl = $seoEntity->getSeoUrl();
-
-            //Re-add query parameters from given parameter array back to new SEO url
-            if (isset($stdUrlParsed['query'])) {
-                $stdQueryParsed = SeoHelper::parseQueryString($stdUrlParsed['query']);
-
-                $seoStdParsed = $seoEntity->getParsedStdUrl(true);
-
-                if (isset($seoStdParsed['query'])) {
-                    $seoStdQueryParsed = SeoHelper::parseQueryString($seoStdParsed['query']);
-                    //remove query parameters that were used to generate SEO uri and
-                    //re-attach them to new std uri
-                    $newStdUrlParams = SeoUtils::recursiveUnsetExisting($stdQueryParsed, $seoStdQueryParsed);
-                } else {
-                    $newStdUrlParams = $stdQueryParsed;
-                }
-
-                $seoUrl = SeoHelper::getUri($seoUrl, $newStdUrlParams);
-            }
-
-            if ($absolute === UrlGeneratorInterface::ABSOLUTE_URL || $absolute === UrlGeneratorInterface::NETWORK_PATH) {
-                $seoUrl = sprintf('%s://%s%s%s',
-                    $stdUrlParsed['scheme'] ?? $this->getContext()->getScheme(),
-                    $stdUrlParsed['host'] ?? $this->getContext()->getHost(),
-                    isset($stdUrlParsed['port']) && $stdUrlParsed['port'] !== 80 ? ':' . $stdUrlParsed['port'] : '',
-                    $seoUrl
-                );
-            }
-        } catch (RouteNotFoundException $ex) {
-            //If in debug mode rethrow exception
-            if ($this->debug && !$this->isSeoRoute($name)) {
-                throw $ex;
-            }
-
-            if (null === $seoUrl = $this->applyMissingUrlStrategy($parameters, $stdUrlParsed)) {
-                $seoUrl = $stdUrl;
-            }
-        }
-
-        return $seoUrl;
-    }
-
-    /**
-     * @param string[] $routeParams
-     * @param string[] $stdUrlParsed
-     */
-    private function applyMissingUrlStrategy(array $routeParams, array $stdUrlParsed): ?string
-    {
-        $result = null;
-
-        switch ($this->getMissingUrlStrategy()) {
-            case 'callback':
-                $result = call_user_func_array([$this->sm, 'resolveMissingUrl'], [$routeParams, $stdUrlParsed]);
-                break;
-            case 'empty_host':
-                $result = sprintf('%s://%s%s/',
-                    $this->getContext()->getScheme(),
-                    $this->getContext()->getHost(),
-                    80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : ''
-                );
-                break;
-            case 'empty_host_with_locale':
-                $result = sprintf('%s://%s%s/%s/',
-                    $this->getContext()->getScheme(),
-                    $this->getContext()->getHost(),
-                    80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : '',
-                    $routeParams['_locale']
-                );
-                break;
-            case 'empty':
-                $result = '';
-                break;
-            case 'ignore':
-                $result = '#';
-                break;
-            default:
-                break;
-        }
-
-        return $result;
-    }
-
-    /**
-     * Sets locale to given parameters array if it is not set. The locale is taken from current request context.
-     *
-     * @param array $parameters
-     * @return string
-     */
-    private function setLocale(array &$parameters)
-    {
-        $this->currentLocale = $this->getContext()->getParameter('_locale');
-
-        if (isset($parameters['_locale'])) {
-            $locale = $parameters['_locale'];
-        } else {
-            $parameters['_locale'] = $locale = ($this->currentLocale) ? $this->currentLocale : $this->defaultLocale;
-        }
-
-        return $locale;
     }
 
     /**
@@ -286,6 +129,159 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
     public function getContext(): RequestContext
     {
         return $this->router->getContext();
+    }
+
+    public function generate($name, $parameters = [], $absolute = UrlGeneratorInterface::ABSOLUTE_PATH): string
+    {
+        $seoUrl = '';
+        $stdUrlParsed = [];
+
+        try {
+            //Generates standard url
+            $stdUrl = $this->router->generate($name, $parameters, $absolute);
+
+            //Check if given route name is not registered as seo route
+            if (!$this->isSeoRoute($name)) {
+                return $stdUrl;
+            }
+
+            //Usually when generating url from twig, we do not specify locale, that is why we must
+            //explicitly set it
+            $this->setLocale($parameters);
+
+            //Building explicit $routeParameters array by adding some of control parameters
+            $stdUrlParsed = parse_url($stdUrl);
+            $routeParameters = array_merge(
+                $parameters,
+                [
+                    'path' => $stdUrlParsed['path'],
+                    '_std_query' => isset($stdUrlParsed['query']) ? $stdUrlParsed['query'] : '',
+                ]
+            );
+
+            $seoEntity = $this->locator->get('nfq_seo.seo_manager')->getActiveSeoUrl($name, $routeParameters);
+
+            //If active SEO url was not found, generate a new one and use it instead
+            if (!$seoEntity && false === ($seoEntity = $this->locator->get('nfq_seo.seo_manager')->createSeoUrl(
+                $name,
+                $routeParameters
+            ))
+            ) {
+                throw new RouteNotFoundException();
+            }
+
+            $this->lastGeneratedSeoEntity = $seoEntity;
+            $seoUrl = $seoEntity->getSeoUrl();
+
+            //Re-add query parameters from given parameter array back to new SEO url
+            if (isset($stdUrlParsed['query'])) {
+                $stdQueryParsed = SeoHelper::parseQueryString($stdUrlParsed['query']);
+
+                $seoStdParsed = $seoEntity->getParsedStdUrl(true);
+
+                if (isset($seoStdParsed['query'])) {
+                    $seoStdQueryParsed = SeoHelper::parseQueryString($seoStdParsed['query']);
+                    //remove query parameters that were used to generate SEO uri and
+                    //re-attach them to new std uri
+                    $newStdUrlParams = SeoUtils::recursiveUnsetExisting($stdQueryParsed, $seoStdQueryParsed);
+                } else {
+                    $newStdUrlParams = $stdQueryParsed;
+                }
+
+                $seoUrl = SeoHelper::getUri($seoUrl, $newStdUrlParams);
+            }
+
+            if ($absolute === UrlGeneratorInterface::ABSOLUTE_URL
+                || $absolute === UrlGeneratorInterface::NETWORK_PATH) {
+                $seoUrl = sprintf(
+                    '%s://%s%s%s',
+                    $stdUrlParsed['scheme'] ?? $this->getContext()->getScheme(),
+                    $stdUrlParsed['host'] ?? $this->getContext()->getHost(),
+                    isset($stdUrlParsed['port']) && $stdUrlParsed['port'] !== 80 ? ':' . $stdUrlParsed['port'] : '',
+                    $seoUrl
+                );
+            }
+        } catch (RouteNotFoundException $ex) {
+            //If in debug mode rethrow exception
+            if ($this->debug && !$this->isSeoRoute($name)) {
+                throw $ex;
+            }
+
+            if (null === $seoUrl = $this->applyMissingUrlStrategy($parameters, $stdUrlParsed)) {
+                $seoUrl = $stdUrl;
+            }
+        }
+
+        return $seoUrl;
+    }
+
+    /**
+     * @param string[] $routeParams
+     * @param string[] $stdUrlParsed
+     */
+    private function applyMissingUrlStrategy(array $routeParams, array $stdUrlParsed): ?string
+    {
+        $result = null;
+
+        switch ($this->getMissingUrlStrategy()) {
+            case 'callback':
+                $result = call_user_func_array([$this->sm, 'resolveMissingUrl'], [$routeParams, $stdUrlParsed]);
+                break;
+            case 'empty_host':
+                $result = sprintf(
+                    '%s://%s%s/',
+                    $this->getContext()->getScheme(),
+                    $this->getContext()->getHost(),
+                    80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : ''
+                );
+                break;
+            case 'empty_host_with_locale':
+                $result = sprintf(
+                    '%s://%s%s/%s/',
+                    $this->getContext()->getScheme(),
+                    $this->getContext()->getHost(),
+                    80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : '',
+                    $routeParams['_locale']
+                );
+                break;
+            case 'empty':
+                $result = '';
+                break;
+            case 'ignore':
+                $result = '#';
+                break;
+            default:
+                break;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return SeoInterface|bool
+     */
+    private function getLastGeneratedSeoEntity()
+    {
+        return $this->lastGeneratedSeoEntity;
+    }
+
+    /**
+     * Sets locale to given parameters array if it is not set. The locale is taken from current request context.
+     *
+     * @param array $parameters
+     * @return string
+     */
+    private function setLocale(array &$parameters)
+    {
+        $this->currentLocale = $this->getContext()->getParameter('_locale');
+
+        if (isset($parameters['_locale'])) {
+            $locale = $parameters['_locale'];
+        } else {
+            $parameters['_locale'] = $locale = ($this->currentLocale) ? $this->currentLocale : $this->defaultLocale;
+        }
+
+        return $locale;
     }
 
     /**
@@ -346,6 +342,7 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
                 if (empty($stdUrl)) {
                     break;
                 }
+                // no break
             case SeoInterface::STATUS_OK:
                 //If stdMatch is seo route, add specific flag to it's parameters, otherwise do not continue
                 if (!$this->isSeoRoute($stdMatch['_route'])) {
@@ -353,12 +350,15 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
                 }
 
                 //Get query parameters from standard uri which should be added back to current uri
-                $this->setRequestParameters($matchData,
-                    SeoUtils::diffKeyRecursive($stdQueryParameters, $requestParams));
+                $this->setRequestParameters(
+                    $matchData,
+                    SeoUtils::diffKeyRecursive($stdQueryParameters, $requestParams)
+                );
 
                 ($matchData instanceof Request) && $matchData->attributes->set('__nfq_seo', [
                     'entity' => $stdUrl,
-                    'url' => sprintf('%s://%s%s%s',
+                    'url' => sprintf(
+                        '%s://%s%s%s',
                         $this->getContext()->getScheme(),
                         $this->getContext()->getHost(),
                         80 !== $this->getContext()->getHttpPort()
@@ -366,8 +366,10 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
                             : '',
                         $stdUrl->getSeoUrl()
                     ),
-                    'alternates' => $this->locator->get('nfq_seo.alt_manager')->getLangAlternates($stdUrl,
-                        $routeParams),
+                    'alternates' => $this->locator->get('nfq_seo.alt_manager')->getLangAlternates(
+                        $stdUrl,
+                        $routeParams
+                    ),
                 ]);
 
                 $result = $stdMatch;
@@ -410,7 +412,9 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
     {
         $this->backupContext();
 
-        $seoContext = new RequestContext('', 'GET',
+        $seoContext = new RequestContext(
+            '',
+            'GET',
             $this->getContext()->getHost(),
             $this->getContext()->getScheme(),
             $this->getContext()->getHttpPort(),
@@ -449,5 +453,4 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface, ServiceSubs
             );
         }
     }
-
 }
