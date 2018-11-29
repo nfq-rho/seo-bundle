@@ -12,7 +12,7 @@
 namespace Nfq\SeoBundle\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Nfq\SeoBundle\Entity\Seo;
+use Nfq\SeoBundle\Entity\SeoUrl;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Repository\SeoRepository;
 use Nfq\SeoBundle\Exception\DuplicateException;
@@ -48,7 +48,7 @@ class SeoManager
         $this->sg = $sg;
         $this->em = $em;
 
-        $this->sr = $this->em->getRepository(Seo::class);
+        $this->sr = $this->em->getRepository(SeoUrl::class);
     }
 
     public function getGeneratorManager(): SeoGeneratorManager

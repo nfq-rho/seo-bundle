@@ -12,7 +12,7 @@ namespace Nfq\SeoBundle\Tests\Unit;
 
 use Doctrine\ORM\EntityManager;
 use Mockery as m;
-use Nfq\SeoBundle\Entity\Seo;
+use Nfq\SeoBundle\Entity\SeoUrl;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Repository\SeoRepository;
 use Nfq\SeoBundle\Generator\SeoGeneratorManager;
@@ -65,7 +65,7 @@ class SeoManagerTest extends \PHPUnit_Framework_TestCase
                 'whiles' => [
                     //First iteration of while
                     [
-                        'existing' => (new Seo())
+                        'existing' => (new SeoUrl())
                             ->setSeoPathHash('2568327977')
                             ->setStdPathHash('2644116147')
                             ->setLocale('lt_LT')
@@ -74,7 +74,7 @@ class SeoManagerTest extends \PHPUnit_Framework_TestCase
                             ->setSeoUrl('/lt_LT/some-slug/a-code-1-value-b-code-1-value/foo-bar')
                             ->setStdUrl('/lt_LT/some-slug/acode_1/bcode_1/1')
                             ->setStatus(SeoInterface::STATUS_OK),
-                        'new' => (new Seo())
+                        'new' => (new SeoUrl())
                             ->setSeoPathHash('2568327977')
                             ->setStdPathHash('2644116147')
                             ->setLocale('lt_LT')
@@ -86,7 +86,7 @@ class SeoManagerTest extends \PHPUnit_Framework_TestCase
                     ],
                     //Second iteration of while
                     [
-                        'existing' => (new Seo())
+                        'existing' => (new SeoUrl())
                             ->setSeoPathHash('2221202832')
                             ->setStdPathHash('2644116147')
                             ->setLocale('lt_LT')
@@ -95,7 +95,7 @@ class SeoManagerTest extends \PHPUnit_Framework_TestCase
                             ->setSeoUrl('/lt_LT/some-slug/a-code-1-value-b-code-1-value/foo-bar-2')
                             ->setStdUrl('/lt_LT/some-slug/acode_1/bcode_1/1')
                             ->setStatus(SeoInterface::STATUS_OK),
-                        'new' => (new Seo())
+                        'new' => (new SeoUrl())
                             ->setSeoPathHash('2221202832')
                             ->setStdPathHash('2644116147')
                             ->setLocale('lt_LT')
@@ -107,7 +107,7 @@ class SeoManagerTest extends \PHPUnit_Framework_TestCase
                     ],
                     //Third iteration of while
                     [
-                        'new' => (new Seo())
+                        'new' => (new SeoUrl())
                             ->setSeoPathHash('4083412230')
                             ->setStdPathHash('2644116147')
                             ->setLocale('lt_LT')
@@ -128,7 +128,7 @@ class SeoManagerTest extends \PHPUnit_Framework_TestCase
      */
     public function testIfUniqueUrlIsCreatedCorrectly($hashData, $seoSlug, $whiles, $expectedSeo)
     {
-        $uniqueClosure = function (Seo $data) use ($whiles) {
+        $uniqueClosure = function (SeoUrl $data) use ($whiles) {
             global $test_IT;
 
             if (!isset($whiles[$test_IT]['new'])) {
@@ -207,7 +207,7 @@ class SeoManagerTest extends \PHPUnit_Framework_TestCase
         $mock = m::mock('Nfq\\SeoBundle\\Entity\\SeoRepository');
         $mock->shouldDeferMissing();
 
-        $mock->shouldReceive('createNew')->andReturn(new Seo());
+        $mock->shouldReceive('createNew')->andReturn(new SeoUrl());
 
         return $mock;
     }

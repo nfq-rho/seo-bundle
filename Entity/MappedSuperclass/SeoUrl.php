@@ -18,7 +18,7 @@ use Nfq\SeoBundle\Entity\SeoInterface;
  * @ORM\MappedSuperclass(repositoryClass="Nfq\SeoBundle\Repository\SeoRepository")
  * @ORM\HasLifecycleCallbacks
  */
-class Seo
+class SeoUrl
 {
     /**
      * @var int

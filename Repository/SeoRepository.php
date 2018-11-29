@@ -14,7 +14,7 @@ namespace Nfq\SeoBundle\Repository;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\QueryBuilder;
 use Nfq\AdminBundle\Repository\ServiceEntityRepository;
-use Nfq\SeoBundle\Entity\Seo;
+use Nfq\SeoBundle\Entity\SeoUrl;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Exception\DuplicateException;
 use Nfq\SeoBundle\Utils\SeoHelper;
@@ -30,7 +30,7 @@ class SeoRepository extends ServiceEntityRepository
     protected $alias = 'seo';
 
     /** @var string */
-    protected $entityClass = Seo::class;
+    protected $entityClass = SeoUrl::class;
 
     public function __construct(RegistryInterface $registry)
     {
@@ -115,7 +115,9 @@ class SeoRepository extends ServiceEntityRepository
     public function isUnique(SeoInterface $entity): ?SeoInterface
     {
         $query = $this->createQueryBuilder('su')
-            ->where('su.seoPathHash = :seoPathHash and su.status = :status AND su.locale = :locale AND su.seoUrl = :seoUrl')
+            ->where(
+                'su.seoPathHash = :seoPathHash AND su.status = :status AND su.locale = :locale AND su.seoUrl = :seoUrl'
+            )
             ->setParameters([
                 'seoPathHash' => $entity->getSeoPathHash(),
                 'locale' => $entity->getLocale(),
@@ -173,8 +175,17 @@ class SeoRepository extends ServiceEntityRepository
     public function save(SeoInterface $entity): int
     {
         $sql = <<<SQL
-INSERT INTO seo_urls (`seo_path_hash`, `std_path_hash`, `locale`, `route_name`, `entity_id`, `seo_url`, `std_url`, `status`, `timestamp`) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO seo_url (
+  `seo_path_hash`, 
+  `std_path_hash`,
+  `locale`, 
+  `route_name`, 
+  `entity_id`, 
+  `seo_url`, 
+  `std_url`, 
+  `status`, 
+  `timestamp`
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE `status` = ?, `timestamp` = NOW()
 SQL;
 
@@ -204,7 +215,15 @@ SQL;
     public function handleDuplicate(SeoInterface $entity): void
     {
         $sql = <<<SQL
-UPDATE seo_urls SET `std_path_hash` = ?, `std_url` = ?, `status` = ? WHERE `seo_path_hash` = ? AND `route_name` = ? AND `entity_id` = ? AND `locale` = ?
+UPDATE seo_url 
+SET
+  `std_path_hash` = ?, 
+  `std_url` = ?, 
+  `status` = ? 
+WHERE `seo_path_hash` = ? 
+  AND `route_name` = ? 
+  AND `entity_id` = ? 
+  AND `locale` = ?
 SQL;
 
         $params = [

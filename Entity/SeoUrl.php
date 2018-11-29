@@ -12,7 +12,7 @@
 namespace Nfq\SeoBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Nfq\SeoBundle\Entity\MappedSuperclass\Seo as SeoBase;
+use Nfq\SeoBundle\Entity\MappedSuperclass\SeoUrl as SeoBase;
 
 /**
  * @ORM\Entity()
@@ -23,7 +23,7 @@ use Nfq\SeoBundle\Entity\MappedSuperclass\Seo as SeoBase;
  *      }
  * )
  */
-class Seo extends SeoBase implements SeoInterface
+class SeoUrl extends SeoBase implements SeoInterface
 {
 
 }

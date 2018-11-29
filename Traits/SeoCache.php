@@ -12,17 +12,15 @@
 namespace Nfq\SeoBundle\Traits;
 
 use Nfq\SeoBundle\Utils\SeoHelper;
-use Stash\Interfaces\PoolInterface;
+use Psr\Cache\CacheItemPoolInterface;
 
 /**
- * Class SeoCache
+ * Trait SeoCache
  * @package Nfq\SeoBundle\Traits
  */
 trait SeoCache
 {
-    /**
-     * @var PoolInterface
-     */
+    /** @var CacheItemPoolInterface */
     private $cache;
 
     public function canCache(): bool
@@ -30,18 +28,12 @@ trait SeoCache
         return (!SeoHelper::isCli() && $this->cache);
     }
 
-    /**
-     * @param PoolInterface $cachePool
-     */
-    public function setCache(PoolInterface $cachePool)
+    public function setCache(CacheItemPoolInterface $cachePool): void
     {
         $this->cache = $cachePool;
     }
 
-    /**
-     * @return PoolInterface
-     */
-    public function getCache()
+    public function getCache(): CacheItemPoolInterface
     {
         return $this->cache;
     }

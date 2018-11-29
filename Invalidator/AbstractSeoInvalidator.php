@@ -54,7 +54,7 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
      */
     protected function executeRemoval(InvalidationObjectInterface $invalidationObject): void
     {
-        $statement = 'DELETE FROM seo_urls WHERE route_name = :routeName AND entity_id = :entityId';
+        $statement = 'DELETE FROM seo_url WHERE route_name = :routeName AND entity_id = :entityId';
 
         $whereParams = [
             'routeName' => $this->getRouteName(),
@@ -107,7 +107,7 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
      */
     private function getInvalidationQueryString(InvalidationObjectInterface $invalidationObject): string
     {
-        $query = 'UPDATE seo_urls su ';
+        $query = 'UPDATE seo_url su ';
 
         if ($joinPart = $invalidationObject->getJoinPart()) {
             $query .= sprintf('JOIN %s ', $joinPart);
