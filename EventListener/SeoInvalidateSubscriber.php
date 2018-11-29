@@ -60,9 +60,7 @@ class SeoInvalidateSubscriber implements EventSubscriber
         try {
             $invalidator = $this->getInvalidator($entity);
 
-            $invalidator
-                ->setEntityManager($event->getEntityManager())
-                ->remove($entity);
+            $invalidator->remove($entity);
         } catch (\InvalidArgumentException $ex) {
             //Invalidator was not found, so just continue
         }
@@ -77,9 +75,7 @@ class SeoInvalidateSubscriber implements EventSubscriber
 
             $uow = $event->getEntityManager()->getUnitOfWork();
 
-            $invalidator
-                ->setEntityManager($event->getEntityManager())
-                ->invalidate($entity, $uow->getEntityChangeSet($entity));
+            $invalidator->invalidate($entity, $uow->getEntityChangeSet($entity));
         } catch (\InvalidArgumentException $ex) {
             //Invalidator was not found, so just continue
         }
