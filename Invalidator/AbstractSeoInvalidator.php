@@ -14,18 +14,32 @@ namespace Nfq\SeoBundle\Invalidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Invalidator\Object\InvalidationObjectInterface;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\DependencyInjection\ServiceSubscriberInterface;
 
 /**
  * Class AbstractSeoInvalidator
  * @package Nfq\SeoBundle\Invalidator
  */
-abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
+abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface, ServiceSubscriberInterface
 {
     /** @var string */
     private $currentRouteName;
 
-    /** @var EntityManagerInterface */
-    private $em;
+    /** @var ContainerInterface */
+    private $locator;
+
+    public function __construct(ContainerInterface $locator)
+    {
+        $this->locator = $locator;
+    }
+
+    public static function getSubscribedServices(): array
+    {
+        return [
+            'doctrine' => EntityManagerInterface::class,
+        ];
+    }
 
     public function getRouteName(): string
     {
@@ -38,15 +52,9 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
         return $this;
     }
 
-    public function setEntityManager(EntityManagerInterface $em): SeoInvalidatorInterface
-    {
-        $this->em = $em;
-        return $this;
-    }
-
     public function getEntityManager(): EntityManagerInterface
     {
-        return $this->em;
+        return $this->locator->get('doctrine');
     }
 
     /**

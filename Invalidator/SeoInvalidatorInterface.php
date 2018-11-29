@@ -25,8 +25,6 @@ interface SeoInvalidatorInterface
 
     public function getEntityManager(): EntityManagerInterface;
 
-    public function setEntityManager(EntityManagerInterface $em): SeoInvalidatorInterface;
-
     /**
      * Invalidate seo url for given entity based on given change-set
      *

@@ -37,7 +37,7 @@ class SeoInvalidatorManager
      */
     public function getInvalidator(string $entityClass): SeoInvalidatorInterface
     {
-        foreach($this->routeEntityMap as $routeName => $invalidatorClasses) {
+        foreach ($this->routeEntityMap as $routeName => $invalidatorClasses) {
             if (false !== $idx = array_search($entityClass, $invalidatorClasses)) {
                 return $this->invalidators[$routeName]->setRouteName($routeName);
             }

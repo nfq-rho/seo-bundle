@@ -37,18 +37,22 @@ class SeoGeneratorManager
 
         if (!is_subclass_of($generator, AbstractSeoGenerator::class)) {
             throw new \InvalidArgumentException(
-                sprintf('Generator `%s` must extend `%s`',
+                sprintf(
+                    'Generator `%s` must extend `%s`',
                     $generatorClass,
                     AbstractSeoGenerator::class
-                ));
+                )
+            );
         }
 
         if ($this->isRouteRegistered($routeName)) {
             throw new \InvalidArgumentException(
-                sprintf('Only one generator per route is supported. `%s` already has registered generator `%s`',
+                sprintf(
+                    'Only one generator per route is supported. `%s` already has registered generator `%s`',
                     $routeName,
                     $this->routeToGenerator[$routeName]
-                ));
+                )
+            );
         }
 
         $this->generators[$generatorClass] = $generator;
@@ -62,10 +66,12 @@ class SeoGeneratorManager
     {
         if (!$this->isRouteRegistered($routeName)) {
             throw new \InvalidArgumentException(
-                sprintf('No generator for route `%s` found. Seo routes are: `%s`',
+                sprintf(
+                    'No generator for route `%s` found. Seo routes are: `%s`',
                     $routeName,
                     implode('`, `', array_keys($this->routeToGenerator))
-                ));
+                )
+            );
         }
 
         $id = $this->routeToGenerator[$routeName];

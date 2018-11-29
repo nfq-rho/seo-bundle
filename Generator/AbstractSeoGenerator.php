@@ -14,8 +14,8 @@ namespace Nfq\SeoBundle\Generator;
 use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Model\SeoSlug;
 use Nfq\SeoBundle\Model\SeoSlugInterface;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\DependencyInjection\ServiceSubscriberInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\PropertyAccess\PropertyPathBuilder;
 
@@ -23,26 +23,21 @@ use Symfony\Component\PropertyAccess\PropertyPathBuilder;
  * Class AbstractSeoGenerator
  * @package Nfq\SeoBundle\Generator
  */
-abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwareInterface
+abstract class AbstractSeoGenerator implements SeoGeneratorInterface, ServiceSubscriberInterface
 {
-    use LoggerAwareTrait;
-
-    /** @var EntityManagerInterface */
-    private $em;
-
     /** @var string */
     private $currentRouteName;
 
-    protected function logException(\Exception $exception, array $payload): void
+    public function __construct(ContainerInterface $locator)
     {
-        if (!$this->logger) {
-            throw new \RuntimeException('Set logger service for generator');
-        }
+        $this->locator = $locator;
+    }
 
-        $this->logger->alert(
-            $exception->getMessage() ? $exception->getMessage() : 'Failed to fill missing allowed parameters',
-            $payload
-        );
+    public static function getSubscribedServices(): array
+    {
+        return [
+            'em' => EntityManagerInterface::class,
+        ];
     }
 
     protected function getSeoSlug(): SeoSlugInterface
@@ -64,17 +59,9 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
         return $this->currentRouteName;
     }
 
-    public function setEntityManager(EntityManagerInterface $em): void
-    {
-        $this->em = $em;
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function getEntityManager(): EntityManagerInterface
     {
-        return $this->em;
+        return $this->locator->get('em');
     }
 
     protected function buildAllowedQueryParams(array ...$queryParams)

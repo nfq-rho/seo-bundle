@@ -22,8 +22,6 @@ interface SeoGeneratorInterface
 {
     public function getEntityManager(): EntityManagerInterface;
 
-    public function setEntityManager(EntityManagerInterface $em): void;
-
     public function setCurrentRouteName(string $routeName): SeoGeneratorInterface;
 
     public function getCurrentRouteName(): string;
