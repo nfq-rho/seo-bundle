@@ -15,13 +15,13 @@ use Doctrine\ORM\Mapping as ORM;
 use Nfq\SeoBundle\Entity\MappedSuperclass\Seo as SeoBase;
 
 /**
- * @ORM\Table(name="seo_urls",
+ * @ORM\Entity()
+ * @ORM\Table(
  *      indexes={
  *          @ORM\Index(name="route_locale_entity_index", columns={"route_name", "locale", "entity_id"}),
  *          @ORM\Index(name="std_path_hash_index", columns={"std_path_hash"}),
  *      }
  * )
- * @ORM\Entity()
  */
 class Seo extends SeoBase implements SeoInterface
 {
