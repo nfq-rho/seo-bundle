@@ -20,10 +20,19 @@ trait SeoConfig
     /** @var array */
     private $config = [];
 
-    public function setPathSeparator(string $pathSeparator): self
+    public function setCacheTtl(int $ttl): void
+    {
+        $this->config['cache_ttl'] = $ttl;
+    }
+
+    public function getCacheTtl(): int
+    {
+        return (int)$this->config['cache_ttl'];
+    }
+
+    public function setPathSeparator(string $pathSeparator): void
     {
         $this->config['path_separator'] = $pathSeparator;
-        return $this;
     }
 
     public function getPathSeparator(): string
@@ -31,10 +40,9 @@ trait SeoConfig
         return $this->config['path_separator'];
     }
 
-    public function setSlugSeparator(string $slugSeparator): self
+    public function setSlugSeparator(string $slugSeparator): void
     {
         $this->config['slug_separator'] = $slugSeparator;
-        return $this;
     }
 
     public function getSlugSeparator(): string
@@ -42,10 +50,9 @@ trait SeoConfig
         return $this->config['slug_separator'];
     }
 
-    public function setNotFoundMessage(string $message): self
+    public function setNotFoundMessage(string $message): void
     {
         $this->config['exception_message'] = $message;
-        return $this;
     }
 
     public function getNotFoundMessage(): string
@@ -53,10 +60,9 @@ trait SeoConfig
         return $this->config['exception_message'];
     }
 
-    public function setMissingUrlStrategy(?string $strategy): self
+    public function setMissingUrlStrategy(?string $strategy): void
     {
         $this->config['missing_url_strategy'] = $strategy;
-        return $this;
     }
 
     public function getMissingUrlStrategy(): ?string

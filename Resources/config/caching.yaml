@@ -1,0 +1,7 @@
+services:
+    nfq_seo.cache.adapter.array:
+        parent: cache.adapter.array
+        arguments:
+            $storeSerialized: false
+        tags:
+            - { name: cache.pool }

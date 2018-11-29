@@ -31,8 +31,7 @@ class SeoManager
     use SeoConfig;
     use SeoCache;
 
-    private const CACHE_TTL = 600;
-    private const CACHE_KEY_SEO = 'seo/by-std-hash';
+    private const CACHE_KEY_PREFIX = '__nfq_seo.by_std_hash.';
 
     /** @var SeoRepository */
     private $sr;
@@ -75,14 +74,14 @@ class SeoManager
 
     public function exchangeInactiveSeoUrlForActive(SeoInterface $inactiveSeo): SeoInterface
     {
-        $entity = $cachedEntity = null;
+        $entity = $cacheItem = null;
 
         if ($this->canCache()) {
-            $cachedEntity = $this->getCache()->getItem(self::CACHE_KEY_SEO, $inactiveSeo->getStdPathHash());
-            $entity = $cachedEntity->get();
+            $cacheItem = $this->getCache()->getItem(self::CACHE_KEY_PREFIX . $inactiveSeo->getStdPathHash());
+            $entity = $cacheItem->get();
         }
 
-        if (!$entity || ($cachedEntity && $cachedEntity->isMiss())) {
+        if (!$entity || ($cacheItem && !$cacheItem->isHit())) {
             $criteria = [
                 'routeName' => $inactiveSeo->getRouteName(),
                 'entityId' => $inactiveSeo->getEntityId(),
@@ -92,7 +91,13 @@ class SeoManager
 
             $entity = $this->getRepository()->findOneBy($criteria);
 
-            $cachedEntity && $entity && $cachedEntity->set($entity, self::CACHE_TTL);
+            if ($cacheItem && $entity) {
+                $cacheItem
+                    ->set($entity)
+                    ->expiresAfter($this->getCacheTtl());
+
+                $this->getCache()->save($cacheItem);
+            }
         }
 
         return $entity;
@@ -106,17 +111,23 @@ class SeoManager
         $hashData = $this->sg->getGenerator($routeName)->getHashParams($routeParameters);
         $stdHash = SeoHelper::generateHash($hashData);
 
-        $entity = $cachedEntity = null;
+        $entity = $cacheItem = null;
 
         if ($this->canCache()) {
-            $cachedEntity = $this->getCache()->getItem(self::CACHE_KEY_SEO, $stdHash);
-            $entity = $cachedEntity->get();
+            $cacheItem = $this->getCache()->getItem(self::CACHE_KEY_PREFIX . $stdHash);
+            $entity = $cacheItem->get();
         }
 
-        if (!$entity || ($cachedEntity && $cachedEntity->isMiss())) {
+        if (!$entity || ($cacheItem && !$cacheItem->isHit())) {
             $entity = $this->getRepository()->getEntityByStdHash($stdHash);
 
-            $cachedEntity && $entity && $cachedEntity->set($entity, self::CACHE_TTL);
+            if ($cacheItem && $entity) {
+                $cacheItem
+                    ->set($entity)
+                    ->expiresAfter($this->getCacheTtl());
+
+                $this->getCache()->save($cacheItem);
+            }
         }
 
         return $entity;
@@ -144,10 +155,9 @@ class SeoManager
         $newSeoUrl = $this->buildEntity($seoSlug, $hashParams);
 
         if ($this->canCache()) {
-            $cachedEntity = $this->getCache()->getItem(self::CACHE_KEY_SEO, $newSeoUrl->getStdPathHash());
-            $entity = $cachedEntity->get();
+            $cacheItem = $this->getCache()->getItem(self::CACHE_KEY_PREFIX . $newSeoUrl->getStdPathHash());
 
-            if ($entity) {
+            if (null !== $entity = $cacheItem->get()) {
                 return $entity;
             }
         }
@@ -162,15 +172,20 @@ class SeoManager
             while (null !== ($existingSeoUrl = $this->getRepository()->isUnique($newSeoUrl))) {
                 $this->getRepository()->makeUnique(
                     $existingSeoUrl,
-                    $newSeoUrl, 
+                    $newSeoUrl,
                     $iteration++,
-                    $this->getSlugSeparator());
+                    $this->getSlugSeparator()
+                );
             }
 
-            $this->canCache()
-            && $this->getCache()
-                ->getItem(self::CACHE_KEY_SEO, $newSeoUrl->getStdPathHash())
-                ->set($newSeoUrl, self::CACHE_TTL);
+            if ($this->canCache()) {
+                $cacheItem = $this->getCache()
+                    ->getItem(self::CACHE_KEY_PREFIX . $newSeoUrl->getStdPathHash())
+                    ->set($newSeoUrl)
+                    ->expiresAfter($this->getCacheTtl());
+
+                $this->getCache()->save($cacheItem);
+            }
 
             $this->getRepository()->save($newSeoUrl);
         } catch (DuplicateException $exception) {
@@ -180,7 +195,7 @@ class SeoManager
         return $newSeoUrl;
     }
 
-    public function buildEntity(SeoSlug $seoSlug, array $hashParams): SeoInterface
+    private function buildEntity(SeoSlug $seoSlug, array $hashParams): SeoInterface
     {
         /** @var SeoInterface $seoUrl */
         $seoUrl = $this->getRepository()->createEntity();

@@ -13,6 +13,7 @@ namespace Nfq\SeoBundle\Traits;
 
 use Nfq\SeoBundle\Utils\SeoHelper;
 use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\Cache\Adapter\ChainAdapter;
 
 /**
  * Trait SeoCache
@@ -21,20 +22,23 @@ use Psr\Cache\CacheItemPoolInterface;
 trait SeoCache
 {
     /** @var CacheItemPoolInterface */
-    private $cache;
+    private $pool;
 
     public function canCache(): bool
     {
-        return (!SeoHelper::isCli() && $this->cache);
+        return (!SeoHelper::isCli() && null !== $this->pool);
     }
 
-    public function setCache(CacheItemPoolInterface $cachePool): void
+    /**
+     * @param CacheItemPoolInterface[] $adapters
+     */
+    public function setPool(array $adapters): void
     {
-        $this->cache = $cachePool;
+        $this->pool = new ChainAdapter($adapters);
     }
 
     public function getCache(): CacheItemPoolInterface
     {
-        return $this->cache;
+        return $this->pool;
     }
 }

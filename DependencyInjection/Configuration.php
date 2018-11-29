@@ -11,6 +11,7 @@
 
 namespace Nfq\SeoBundle\DependencyInjection;
 
+use Nfq\SeoBundle\Page\SeoPage;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -27,6 +28,18 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
+                ->arrayNode('cache')
+                    ->children()
+                        ->integerNode('ttl')
+                            ->treatNullLike(3600)
+                            ->defaultValue(3600)
+                        ->end()
+                        ->arrayNode('adapters')
+                            ->treatNullLike([])
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
+                ->end()
                 ->scalarNode('default_locale')->end()
                 ->arrayNode('alternate_url_locale_mapping')
                     ->useAttributeAsKey('id')
@@ -46,7 +59,7 @@ class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
                         ->scalarNode('encoding')->defaultValue('UTF-8')->end()
-                        ->scalarNode('default')->defaultValue('nfq_seo.page.default')->end()
+                        ->scalarNode('service')->defaultValue(SeoPage::class)->end()
                         ->scalarNode('title')->defaultValue('nfq_seo.default_title')->end()
                         ->arrayNode('metas')
                             ->useAttributeAsKey('id')

@@ -18,6 +18,7 @@ use Nfq\SeoBundle\Twig\Extension\SeoExtension;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 /**
@@ -32,6 +33,7 @@ class NfqSeoExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader->load('caching.yaml');
         $loader->load('services.yaml');
 
         $this->configureSeoRouter($container, $config);
@@ -39,19 +41,19 @@ class NfqSeoExtension extends Extension
         $this->configureTwigExtension($container, $config);
         $this->configureAlternatesManager($container, $config);
         $this->configureSeoPage($container, $config['page']);
+        $this->configureCache($container, $config['cache']);
     }
 
     private function configureSeoPage(ContainerBuilder $container, array $config): void
     {
-        return ;
-        $definition = $container->getDefinition($config['default']);
+        $definition = $container->getDefinition($config['service']);
         $definition->addMethodCall('setTitle', [$config['title'], ['translatable' => true]]);
         $definition->addMethodCall('setMetas', [$config['metas']]);
         $definition->addMethodCall('setHeadAttributes', [$config['head']]);
         $definition->addMethodCall('setHtmlAttributes', [$config['head']]);
         $definition->addMethodCall('setLinkOptions', [$config['rel_options']]);
 
-        $container->setAlias('nfq_seo.page', $config['default']);
+        $container->setAlias('nfq_seo.page', $config['service']);
     }
 
     private function configureUrlManager(ContainerBuilder $container, array $config): void
@@ -81,17 +83,31 @@ class NfqSeoExtension extends Extension
     {
         $definition = $container->getDefinition(SeoRouter::class);
 
-        if (isset($config['default_locale'])) {
-            $container->setParameter('nfq_seo.default_locale', $config['default_locale']);
-            $definition->addMethodCall('setDefaultLocale', ['%nfq_seo.default_locale%']);
-        } else {
-            throw new \InvalidArgumentException("No default_locale has been defined");
+        if (!isset($config['default_locale'])) {
+            throw new \InvalidArgumentException('No default_locale has been defined');
         }
+        $container->setParameter('nfq_seo.default_locale', $config['default_locale']);
 
         $definition
-            ->addMethodCall('setSlugSeparator', [$config['slug_separator']])
-            ->addMethodCall('setPathSeparator', [$config['path_separator']])
+            ->addMethodCall('setDefaultLocale', ['%nfq_seo.default_locale%'])
             ->addMethodCall('setMissingUrlStrategy', [$config['missing_url_strategy']])
             ->addMethodCall('setNotFoundMessage', [$config['invalid_url_exception_message']]);
+    }
+
+    private function configureCache(ContainerBuilder $container, array $cacheConfig): void
+    {
+        if (empty($cacheConfig['adapters'])) {
+            return;
+        }
+
+        $adapterRefs = [];
+        foreach ($cacheConfig['adapters'] as $adapterServiceId) {
+            $adapterRefs[] = new Reference($adapterServiceId);
+        }
+
+        $managerDef = $container->getDefinition(SeoManager::class);
+        $managerDef
+            ->addMethodCall('setCacheTtl', [$cacheConfig['ttl']])
+            ->addMethodCall('setPool', [$adapterRefs]);
     }
 }
