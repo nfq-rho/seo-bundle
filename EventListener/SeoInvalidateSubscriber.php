@@ -33,7 +33,6 @@ class SeoInvalidateSubscriber implements EventSubscriber
     public function getSubscribedEvents(): array
     {
         return [
-            'postPersist',
             'postUpdate',
             'preRemove',
         ];
