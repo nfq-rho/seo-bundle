@@ -157,7 +157,7 @@ class SeoRouterSubscriber implements EventSubscriberInterface
 
             $this->router->setMissingUrlStrategy($currentMissingUrlStrategy);
 
-            if (!$redirectTo) {
+            if (!$redirectToUrl) {
                 return;
             }
         } else {

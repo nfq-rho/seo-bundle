@@ -27,12 +27,14 @@ class SeoTagTokenParser extends \Twig_TokenParser
         $stream = $this->parser->getStream();
 
         // recovers all inline parameters close to your tag name
-        $params = array_merge(array(), $this->getInlineParams($token));
+        $params = array_merge([], $this->getInlineParams($token));
+
+        $name = 'seo' . $params[0]->getAttribute('value');
 
         $continue = true;
-        while ($continue) {
+        while($continue) {
             // create subtree until the decideMyTagFork() callback returns true
-            $body = $this->parser->subparse(array($this, 'decideNfqSeoTagFork'));
+            $body = $this->parser->subparse([$this, 'decideNfqSeoTagFork']);
 
             // I like to put a switch here, in case you need to add middle tags, such
             // as: {% mytag %}, {% nextmytag %}, {% endmytag %}.
@@ -40,6 +42,10 @@ class SeoTagTokenParser extends \Twig_TokenParser
 
             switch ($tag) {
                 case $this->tagClose:
+                    $this->parser->setBlock(
+                        $name,
+                        new \Twig_Node_Block($name, $body, $lineNo)
+                    );
                     $continue = false;
                     break;
                 default:
@@ -50,15 +56,14 @@ class SeoTagTokenParser extends \Twig_TokenParser
                             $this->tagClose,
                             $this->tagOpen,
                             $lineNo
-                        ),
-                        -1
+                        )
                     );
             }
 
             // you want $body at the beginning of your arguments
             array_unshift($params, $body);
 
-            // if your tag can also contains params, you can uncomment this line:
+            // if your tag can also contain params, you can uncomment this line:
             // $params = array_merge($params, $this->getInlineParams($token));
             // and comment this one:
             $stream->expect(\Twig_Token::BLOCK_END_TYPE);
