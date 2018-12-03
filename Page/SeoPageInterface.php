@@ -22,169 +22,64 @@ interface SeoPageInterface
     public const SEO_REL_ALTERNATE = 'alternate';
     public const SEO_REL_CANONICAL = 'canonical';
 
-    /**
-     * @param string $host
-     * @return $this
-     */
-    public function setHost($host);
+    public function setHost(string $host): SeoPageInterface;
 
-    /**
-     * @return string
-     */
-    public function getHost();
+    public function getHost(): string;
 
-    /**
-     * @param string $simpleHost
-     * @return $this
-     */
-    public function setSimpleHost($simpleHost);
+    public function setSimpleHost(string $simpleHost): SeoPageInterface;
 
-    /**
-     * @return string
-     */
-    public function getSimpleHost();
+    public function getSimpleHost(): string;
 
-    /**
-     * @param string $locale
-     * @return $this
-     */
-    public function setLocale($locale);
+    public function setLocale(string $locale): SeoPageInterface;
 
-    /**
-     * @return string
-     */
-    public function getLocale();
+    public function getLocale(): ?string;
 
-    /**
-     * @return string
-     */
-    public function getTitle();
+    public function getTitle(): string;
 
-    /**
-     * @return array
-     */
-    public function getTitleExtras();
+    public function getTitleExtras(): array;
 
     /**
      * Parameter $extra usually used for passing arguments required for translation.
      * If no translatable params required, but the title still needs
      * to be translated, pass dummy ['translatable' => true].
-     *
-     * @param $title
-     * @param array $extras
-     * @return $this
      */
-    public function setTitle($title, array $extras = []);
+    public function setTitle(string $title, array $extras = []): SeoPageInterface;
 
-    /**
-     * @return array
-     */
-    public function getMetas();
+    public function getMetas(): array;
 
-    /**
-     * @param $type
-     * @param $name
-     * @param $content
-     * @param array $extras
-     * @return $this
-     */
-    public function addMeta($type, $name, $content, array $extras = []);
+    public function addMeta(string $type, string $name, $content, array $extras = []): SeoPageInterface;
 
-    /**
-     * @param $name
-     * @return bool
-     */
-    public function hasMeta($type, $name);
+    public function hasMeta(string $type, string $name): bool;
 
-    /**
-     * @param array $metas
-     * @return $this
-     */
-    public function setMetas(array $metas);
+    public function setMetas(array $metas): SeoPageInterface;
 
-    /**
-     * @param array $attributes
-     * @return $this
-     */
-    public function setHtmlAttributes(array $attributes);
+    public function setHtmlAttributes(array $attributes): SeoPageInterface;
 
-    /**
-     * @param $name
-     * @param $value
-     * @return $this
-     */
-    public function addHtmlAttribute($name, $value);
+    public function addHtmlAttribute(string $name, $value): SeoPageInterface;
 
-    /**
-     * @return array
-     */
-    public function getHtmlAttributes();
+    public function getHtmlAttributes(): array;
 
-    /**
-     * @param array $attributes
-     * @return $this
-     */
-    public function setHeadAttributes(array $attributes);
+    public function setHeadAttributes(array $attributes): SeoPageInterface;
 
-    /**
-     * @param $name
-     * @param $value
-     * @return $this
-     */
-    public function addHeadAttribute($name, $value);
+    public function addHeadAttribute(string $name, $value): SeoPageInterface;
 
-    /**
-     * @return array
-     */
-    public function getHeadAttributes();
+    public function getHeadAttributes(): array;
 
-    /**
-     * @param string $link
-     * @return $this
-     */
-    public function setLinkCanonical($link);
+    public function setLinkCanonical(string $link): SeoPageInterface;
 
-    /**
-     * @return string
-     */
-    public function getLinkCanonical();
+    public function getLinkCanonical(): string;
 
-    /**
-     * @param string $link
-     * @return $this
-     */
-    public function setLinkPrevPage($link);
+    public function setLinkPrevPage(string $link): SeoPageInterface;
 
-    /**
-     * @return string
-     */
-    public function getLinkPrevPage();
+    public function getLinkPrevPage(): string;
 
-    /**
-     * @param string $link
-     * @return $this
-     */
-    public function setLinkNextPage($link);
+    public function setLinkNextPage(string $link): SeoPageInterface;
 
-    /**
-     * @return string
-     */
-    public function getLinkNextPage();
+    public function getLinkNextPage(): string;
 
-    /**
-     * @return array
-     */
-    public function getLangAlternates();
+    public function getLangAlternates(): array;
 
-    /**
-     * @param array $alternates
-     * @return $this
-     */
-    public function setLangAlternates(array $alternates);
+    public function setLangAlternates(array $alternates): SeoPageInterface;
 
-    /**
-     * @param string|null $option
-     * @return array
-     */
-    public function getLinkOptions($option = null);
+    public function getLinkOptions(string $option = null): array;
 }

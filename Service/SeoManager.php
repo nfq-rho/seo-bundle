@@ -72,7 +72,7 @@ class SeoManager
         return $this->getRepository()->getEntityBySeoHash($seoHash, $locale);
     }
 
-    public function exchangeInactiveSeoUrlForActive(SeoInterface $inactiveSeo): SeoInterface
+    public function exchangeInactiveSeoUrlForActive(SeoInterface $inactiveSeo): ?SeoInterface
     {
         $entity = $cacheItem = null;
 

@@ -132,9 +132,13 @@ class SeoExtension extends \Twig_Extension
 
     private function getDefaultHeadAttributes(): array
     {
-        return [
-            'lang' => SeoHelper::getLangFromLocale($this->sp->getLocale(), $this->defaultLocale),
-        ];
+        $result = [];
+
+        if (null !== $locale = $this->sp->getLocale()) {
+            $result['lang'] = SeoHelper::getLangFromLocale($locale, $this->defaultLocale);
+        }
+
+        return $result;
     }
 
     public function getMetaLinks(): string
@@ -226,7 +230,8 @@ class SeoExtension extends \Twig_Extension
 
     private function normalize(string $string, array $extras = []): string
     {
-        if (isset($extras['translatable']) && $extras['translatable'] === true) {
+        if (isset($extras['trans'])) {
+            unset($extras['trans']);
             $string = $this->translator->trans($string, $extras);
         }
 

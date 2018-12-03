@@ -129,12 +129,13 @@ class SeoRepository extends ServiceEntityRepository
 
         $query->useResultCache(false)->expireResultCache(true);
 
-        /** @var Seo $existingUrl */
+        /** @var SeoUrl $existingUrl */
         $existingUrl = $query->getOneOrNullResult();
 
         //Check if we're not generating seo duplicate for entity with different std
-        if ($existingUrl && $existingUrl->getEntityId() == $entity->getEntityId()
-            && $existingUrl->getRouteName() == $entity->getRouteName()
+        if ($existingUrl
+            && $existingUrl->getEntityId() === $entity->getEntityId()
+            && $existingUrl->getRouteName() === $entity->getRouteName()
         ) {
             throw new DuplicateException();
         }
@@ -152,7 +153,7 @@ class SeoRepository extends ServiceEntityRepository
         $match = [];
         $isMatch = preg_match($pattern, $seoUrlExisting->getSeoUrl(), $match, PREG_OFFSET_CAPTURE);
 
-        $currentCount = ($isMatch) ? $match['uid'][0] : 1;
+        $currentCount = $isMatch ? $match['uid'][0] : 1;
 
         // $currentCount can not be higher than iteration, if it is it means that
         // $currentCount is a random matched number which is in entity title
@@ -161,10 +162,10 @@ class SeoRepository extends ServiceEntityRepository
             $match = [];
         }
 
-        $nextCount = (int)($currentCount + 1);
+        $nextCount = $currentCount + 1;
         $seoUrl = $seoUrlNew->getSeoUrl();
 
-        $seoUrl = (empty($match))
+        $seoUrl = empty($match)
             ? $seoUrl . $slugSeparator . $nextCount
             : substr_replace($seoUrl, $slugSeparator . $nextCount, $match[0][1]);
 

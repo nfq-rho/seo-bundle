@@ -47,13 +47,11 @@ class NfqSeoExtension extends Extension
     private function configureSeoPage(ContainerBuilder $container, array $config): void
     {
         $definition = $container->getDefinition($config['service']);
-        $definition->addMethodCall('setTitle', [$config['title'], ['translatable' => true]]);
+        $definition->addMethodCall('setTitle', [$config['title'], ['trans' => true]]);
         $definition->addMethodCall('setMetas', [$config['metas']]);
         $definition->addMethodCall('setHeadAttributes', [$config['head']]);
         $definition->addMethodCall('setHtmlAttributes', [$config['head']]);
         $definition->addMethodCall('setLinkOptions', [$config['rel_options']]);
-
-        $container->setAlias('nfq_seo.page', $config['service']);
     }
 
     private function configureUrlManager(ContainerBuilder $container, array $config): void

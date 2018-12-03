@@ -9,6 +9,8 @@ services:
             $defaultLocale: '%nfq_seo.default_locale%'
             $locales: '%locales%'
 
+    nfq_seo.page: '@Nfq\SeoBundle\Page\SeoPage'
+
     Nfq\SeoBundle\:
         resource: '../../*'
         exclude: '../../{DependencyInjection,Entity,Exception,Model,Tests,Utils,NfqSeoBundle.php}'
