@@ -36,18 +36,14 @@ class SeoManager
     /** @var SeoRepository */
     private $sr;
 
-    /** @var EntityManagerInterface */
-    private $em;
-
     /**  @var SeoGeneratorManager */
     private $sg;
 
     public function __construct(SeoGeneratorManager $sg, EntityManagerInterface $em)
     {
         $this->sg = $sg;
-        $this->em = $em;
 
-        $this->sr = $this->em->getRepository(SeoUrl::class);
+        $this->sr = $em->getRepository(SeoUrl::class);
     }
 
     public function getGeneratorManager(): SeoGeneratorManager

@@ -142,32 +142,17 @@ class SeoRouterSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $routeName = $request->attributes->get('_route');
         $routeParameters = array_merge(
             $request->attributes->get('_route_params'),
-            $request->query->all(),
-            [
-                'path' => $request->getPathInfo(),
-            ]
+            $request->query->all()
         );
 
-        $seoUrl = $this->sm->getActiveSeoUrl($request->attributes->get('_route'), $routeParameters);
+        $redirectToUrl = $this->router->generate($routeName, $routeParameters);
 
-        if (!$seoUrl) {
-            $currentMissingUrlStrategy = $this->router->getMissingUrlStrategy();
-
-            $this->router->setMissingUrlStrategy(null);
-            $redirectToUrl = $this->router->generate($request->attributes->get('_route'), $routeParameters);
-
-            $this->router->setMissingUrlStrategy($currentMissingUrlStrategy);
-
-            if (!$redirectToUrl) {
-                return;
-            }
-        } else {
-            /**
-             * @TODO: remove params from $requestQueryString which are in $seoUrl->getStdUrl()
-             */
-            $redirectToUrl = $this->getFullUri($seoUrl->getSeoUrl(), $event->getRequest()->getQueryString());
+        //Seo url can't be generated just continue the request
+        if ($redirectToUrl === $request->getPathInfo()) {
+            return;
         }
 
         $this->issueRedirect($event, $redirectToUrl);

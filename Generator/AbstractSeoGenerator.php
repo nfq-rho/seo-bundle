@@ -28,6 +28,9 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, ServiceSub
     /** @var string */
     private $currentRouteName;
 
+    /** @var ContainerInterface */
+    private $locator;
+
     public function __construct(ContainerInterface $locator)
     {
         $this->locator = $locator;
@@ -36,7 +39,7 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, ServiceSub
     public static function getSubscribedServices(): array
     {
         return [
-            'em' => EntityManagerInterface::class,
+            EntityManagerInterface::class,
         ];
     }
 
@@ -61,7 +64,7 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, ServiceSub
 
     public function getEntityManager(): EntityManagerInterface
     {
-        return $this->locator->get('em');
+        return $this->locator->get(EntityManagerInterface::class);
     }
 
     protected function buildAllowedQueryParams(array ...$queryParams)

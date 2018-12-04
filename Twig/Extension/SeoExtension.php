@@ -160,7 +160,7 @@ class SeoExtension extends \Twig_Extension
             return sprintf(
                 "<link rel=\"%s\" href=\"%s\" />\n",
                 SeoPageInterface::SEO_REL_CANONICAL,
-                $this->formatCanonicalUri($canonical)
+                $this->sp->formatCanonicalUri($canonical)
             );
         }
 
@@ -175,7 +175,7 @@ class SeoExtension extends \Twig_Extension
             $html .= sprintf(
                 "<link rel=\"%s\" href=\"%s\" hreflang=\"%s\" />\n",
                 SeoPageInterface::SEO_REL_ALTERNATE,
-                $this->formatCanonicalUri($uri),
+                $this->sp->formatCanonicalUri($uri),
                 $hrefLang
             );
         }
@@ -193,7 +193,7 @@ class SeoExtension extends \Twig_Extension
             $html .= sprintf(
                 "<link rel=\"%s\" href=\"%s\" />",
                 SeoPageInterface::SEO_REL_PREV,
-                $this->formatCanonicalUri($host . $prev)
+                $this->sp->formatCanonicalUri($host . $prev)
             );
         }
 
@@ -202,30 +202,11 @@ class SeoExtension extends \Twig_Extension
             $html .= sprintf(
                 "<link rel=\"%s\" href=\"%s\" />",
                 SeoPageInterface::SEO_REL_NEXT,
-                $this->formatCanonicalUri($host . $next)
+                $this->sp->formatCanonicalUri($host . $next)
             );
         }
 
         return $html;
-    }
-
-    private function formatCanonicalUri(string $uri): string
-    {
-        $allowedQueryParams = $this->sp->getLinkOptions('allowed_canonical_parameters');
-        $parsedQueryString = parse_url(rawurldecode($uri), PHP_URL_QUERY);
-
-        if (!empty($allowedQueryParams) && !empty($parsedQueryString)) {
-            $flippedParams = array_flip($allowedQueryParams);
-
-            parse_str($parsedQueryString, $parsedQueryStringArr);
-            $allowedQueryStringArr = array_intersect_key($parsedQueryStringArr, $flippedParams);
-
-            [$uriPath,] = explode('?', $uri, 2);
-
-            return SeoHelper::getUri($uriPath, $allowedQueryStringArr);
-        }
-
-        return $uri;
     }
 
     private function normalize(string $string, array $extras = []): string

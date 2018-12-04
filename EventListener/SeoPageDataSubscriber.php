@@ -74,7 +74,7 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
         $this->sp->setHost($request->getSchemeAndHttpHost());
         $this->sp->setSimpleHost('http://' . $request->getHost());
 
-        $this->sp->addMeta('property', 'og:url', '%host%' . $request->getRequestUri());
+        $this->sp->addMeta('property', 'og:url', $this->sp->formatCanonicalUri($request->getUri()));
         $this->sp->addMeta('property', 'og:type', 'website');
 
         if (!$this->isSeoRequest($request)) {
@@ -94,7 +94,7 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
 
     private function getFullUri(string $path, ?string $queryString): string
     {
-        return $path . (!$queryString ? '' : '?' . $queryString);
+        return $this->sp->formatCanonicalUri($path . (!$queryString ? '' : '?' . $queryString));
     }
 
     private function isDebugRequest(Request $request): bool

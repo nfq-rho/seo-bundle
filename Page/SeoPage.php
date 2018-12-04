@@ -11,6 +11,8 @@
 
 namespace Nfq\SeoBundle\Page;
 
+use Nfq\SeoBundle\Utils\SeoHelper;
+
 /**
  * Class SeoPage
  * @package Nfq\SeoBundle\Page
@@ -257,6 +259,25 @@ class SeoPage implements SeoPageInterface
     public function getLangAlternates(): array
     {
         return $this->getLinks(self::SEO_REL_ALTERNATE);
+    }
+
+    public function formatCanonicalUri(string $uri): string
+    {
+        $allowedQueryParams = $this->getLinkOptions('allowed_canonical_parameters');
+        $parsedQueryString = parse_url(rawurldecode($uri), PHP_URL_QUERY);
+
+        if (!empty($allowedQueryParams) && !empty($parsedQueryString)) {
+            $flippedParams = array_flip($allowedQueryParams);
+
+            parse_str($parsedQueryString, $parsedQueryStringArr);
+            $allowedQueryStringArr = array_intersect_key($parsedQueryStringArr, $flippedParams);
+
+            [$uriPath,] = explode('?', $uri, 2);
+
+            return SeoHelper::getUri($uriPath, $allowedQueryStringArr);
+        }
+
+        return $uri;
     }
 
     /**

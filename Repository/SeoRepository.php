@@ -149,7 +149,7 @@ class SeoRepository extends ServiceEntityRepository
         int $iteration,
         string $slugSeparator
     ): void {
-        $pattern = '~-(?P<uid>[0-9]+)$~';
+        $pattern = '~-(?P<uid>\d+)$~';
         $match = [];
         $isMatch = preg_match($pattern, $seoUrlExisting->getSeoUrl(), $match, PREG_OFFSET_CAPTURE);
 
