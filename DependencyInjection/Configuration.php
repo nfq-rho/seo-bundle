@@ -23,8 +23,10 @@ class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('nfq_seo');
+        $treeBuilder = new TreeBuilder('nfq_seo');
+        $rootNode = method_exists($treeBuilder, 'getRootNode')
+            ? $treeBuilder->getRootNode()
+            : $treeBuilder->root('nfq_seo');
 
         $rootNode
             ->children()
