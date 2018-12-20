@@ -15,7 +15,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Invalidator\Object\InvalidationObjectInterface;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\DependencyInjection\ServiceSubscriberInterface;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 /**
  * Class AbstractSeoInvalidator

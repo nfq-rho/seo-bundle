@@ -19,7 +19,6 @@ use Nfq\SeoBundle\Traits\SeoConfig;
 use Nfq\SeoBundle\Utils\SeoHelper;
 use Nfq\SeoBundle\Utils\SeoUtils;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\DependencyInjection\ServiceSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
@@ -28,6 +27,7 @@ use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 /**
  * Class SeoRouter

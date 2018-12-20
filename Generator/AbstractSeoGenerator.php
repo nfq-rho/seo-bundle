@@ -15,9 +15,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Model\SeoSlug;
 use Nfq\SeoBundle\Model\SeoSlugInterface;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\DependencyInjection\ServiceSubscriberInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\PropertyAccess\PropertyPathBuilder;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 /**
  * Class AbstractSeoGenerator
