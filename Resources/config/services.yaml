@@ -23,8 +23,10 @@ services:
         tags:
             - { name: doctrine.event_subscriber }
 
+    Nfq\SeoBundle\Routing\SegmentBasedNotFoundResolver: ~
+    Nfq\SeoBundle\Routing\NotFoundResolverInterface: '@Nfq\SeoBundle\Routing\SegmentBasedNotFoundResolver'
+
     Nfq\SeoBundle\Routing\SeoRouter:
         decorates: 'router.default'
         arguments:
             $router: '@Nfq\SeoBundle\Routing\SeoRouter.inner'
-

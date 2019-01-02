@@ -11,10 +11,10 @@
 
 namespace Nfq\SeoBundle;
 
-use Nfq\SeoBundle\DependencyInjection\Compiler\CacheServiceCompilerPass;
-use Nfq\SeoBundle\DependencyInjection\Compiler\OverrideRoutingCompilerPass;
-use Nfq\SeoBundle\DependencyInjection\Compiler\SeoGeneratorsCompilerPass;
-use Nfq\SeoBundle\DependencyInjection\Compiler\SeoInvalidatorsCompilerPass;
+use Nfq\SeoBundle\DependencyInjection\Compiler\NotFoundResolverPass;
+use Nfq\SeoBundle\DependencyInjection\Compiler\SeoGeneratorPass;
+use Nfq\SeoBundle\DependencyInjection\Compiler\SeoInvalidatorPass;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
@@ -28,7 +28,8 @@ class NfqSeoBundle extends Bundle
     {
         parent::build($container);
 
-        $container->addCompilerPass(new SeoGeneratorsCompilerPass());
-        $container->addCompilerPass(new SeoInvalidatorsCompilerPass());
+        $container->addCompilerPass(new NotFoundResolverPass(), PassConfig::TYPE_REMOVE);
+        $container->addCompilerPass(new SeoGeneratorPass());
+        $container->addCompilerPass(new SeoInvalidatorPass());
     }
 }

@@ -42,6 +42,7 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                ->scalarNode('resolve_404_pages')->defaultFalse()->end()
                 ->scalarNode('default_locale')->end()
                 ->arrayNode('alternate_url_locale_mapping')
                     ->useAttributeAsKey('id')

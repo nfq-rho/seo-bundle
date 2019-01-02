@@ -18,10 +18,10 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Class SeoInvalidatorsCompilerPass
+ * Class SeoInvalidatorPass
  * @package Nfq\SeoBundle\DependencyInjection\Compiler
  */
-class SeoInvalidatorsCompilerPass implements CompilerPassInterface
+class SeoInvalidatorPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {

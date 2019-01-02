@@ -15,6 +15,7 @@ use Nfq\SeoBundle\Routing\SeoRouter;
 use Nfq\SeoBundle\Service\AlternatesManager;
 use Nfq\SeoBundle\Service\SeoManager;
 use Nfq\SeoBundle\Twig\Extension\SeoExtension;
+use Symfony\Component\Cache\CacheItem;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader;
@@ -33,8 +34,14 @@ class NfqSeoExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
-        $loader->load('caching.yaml');
+
+        if (class_exists(CacheItem::class)) {
+            $loader->load('caching.yaml');
+        }
+
         $loader->load('services.yaml');
+
+        $container->setParameter('nfq_seo.resolve_404_pages', $config['resolve_404_pages']);
 
         $this->configureSeoRouter($container, $config);
         $this->configureUrlManager($container, $config);
