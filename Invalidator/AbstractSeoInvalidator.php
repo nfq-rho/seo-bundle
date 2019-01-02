@@ -15,13 +15,13 @@ use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Invalidator\Object\InvalidationObjectInterface;
 use Psr\Container\ContainerInterface;
-use Symfony\Contracts\Service\ServiceSubscriberInterface;
+use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * Class AbstractSeoInvalidator
  * @package Nfq\SeoBundle\Invalidator
  */
-abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface, ServiceSubscriberInterface
+abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
 {
     /** @var string */
     private $currentRouteName;
@@ -90,7 +90,7 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface, Servic
             'active_status' => SeoInterface::STATUS_OK,
             'target_status' => $invalidationObject->getInvalidationStatus()
         ]);
-        
+
         $whereParams = array_filter($whereParams, function ($value) {
             return $value !== null;
         });
@@ -132,5 +132,19 @@ abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface, Servic
         }
 
         return $query;
+    }
+}
+
+if (Kernel::VERSION_ID >= 42000) {
+    abstract class AbstractSeoInvalidator extends AbstractSeoInvalidatorBase
+        implements \Symfony\Contracts\Service\ServiceSubscriberInterface
+    {
+
+    }
+} else {
+    abstract class AbstractSeoInvalidator extends AbstractSeoInvalidatorBase
+        implements \Symfony\Component\DependencyInjection\ServiceSubscriberInterface
+    {
+
     }
 }

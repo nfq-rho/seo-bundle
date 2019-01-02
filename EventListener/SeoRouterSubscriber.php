@@ -12,6 +12,7 @@
 namespace Nfq\SeoBundle\EventListener;
 
 use Nfq\SeoBundle\Entity\SeoInterface;
+use Nfq\SeoBundle\Routing\NotFoundResolverInterface;
 use Nfq\SeoBundle\Routing\SeoRouter;
 use Nfq\SeoBundle\Service\SeoManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -35,10 +36,17 @@ class SeoRouterSubscriber implements EventSubscriberInterface
     /** @var SeoRouter|RouterInterface */
     private $router;
 
-    public function __construct(SeoManager $sm, RouterInterface $router)
-    {
+    /** @var null|NotFoundResolverInterface */
+    private $notFoundResolver;
+
+    public function __construct(
+        SeoManager $sm,
+        RouterInterface $router,
+        NotFoundResolverInterface $notFoundResolver = null
+    ) {
         $this->sm = $sm;
         $this->router = $router;
+        $this->notFoundResolver = $notFoundResolver;
     }
 
     public static function getSubscribedEvents(): array
@@ -57,35 +65,41 @@ class SeoRouterSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $this->handleStdToSeoRedirect($event);
+        $this->handle404($event);
 
-        if ($event->isPropagationStopped()) {
-            return;
-        }
+        $this->handleStdToSeoRedirect($event);
 
         $seoData = $this->extractSeoDataFromRequest($event->getRequest());
 
+        if (null === $seoData) {
+            return;
+        }
+
         $this->handleCaseRedirect($event, $seoData);
-
-        if ($event->isPropagationStopped()) {
-            return;
-        }
-
         $this->handleSeoRedirect($event, $seoData);
-
-        if ($event->isPropagationStopped()) {
-            return;
-        }
     }
 
     private function extractSeoDataFromRequest(Request $request): ?array
     {
-        return $request->attributes->get('__nfq_seo');
+        $seoData = $request->attributes->get('__nfq_seo');
+        return empty($seoData) ? null : $seoData;
     }
 
-    private function handleCaseRedirect(GetResponseEvent $event, ?array $seoData): void
+    private function handle404(GetResponseEvent $event): void
     {
-        if (null === $seoData) {
+        $request = $event->getRequest();
+
+        if (null === $this->notFoundResolver
+            || $request->attributes->get('_controller') !== SeoRouter::SEO_EXCEPTION_CONTROLLER) {
+            return;
+        }
+
+        $this->issueRedirect($event, $this->notFoundResolver->resolve($request));
+    }
+
+    private function handleCaseRedirect(GetResponseEvent $event, array $seoData): void
+    {
+        if ($event->isPropagationStopped()) {
             return;
         }
 
@@ -98,15 +112,15 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         //This is for, for example, avoiding uppercase letters in SEO path
         /** @TODO add config value for `url_case_check` */
         if ($request->getPathInfo() !== $seoEntity->getSeoUrl()) {
-            $redirectToUrl = $this->getFullUri($seoEntity->getSeoUrl(), $request->getQueryString());
+            $redirectToUrl = $this->getFullUri($request, $seoEntity->getSeoUrl());
 
             $this->issueRedirect($event, $redirectToUrl);
         }
     }
 
-    private function handleSeoRedirect(GetResponseEvent $event, ?array $seoData): void
+    private function handleSeoRedirect(GetResponseEvent $event, array $seoData): void
     {
-        if (null === $seoData) {
+        if ($event->isPropagationStopped()) {
             return;
         }
 
@@ -127,7 +141,9 @@ class SeoRouterSubscriber implements EventSubscriberInterface
             throw new NotFoundHttpException();
         }
 
-        $redirectToUrl = $this->getFullUri($seoUrlRedirect->getSeoUrl(), $event->getRequest()->getQueryString());
+        $request = $event->getRequest();
+
+        $redirectToUrl = $this->getFullUri($request, $seoUrlRedirect->getSeoUrl());
 
         $this->issueRedirect($event, $redirectToUrl);
     }
@@ -167,9 +183,10 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         $event->stopPropagation();
     }
 
-    private function getFullUri(string $path, ?string $queryString): string
+    private function getFullUri(Request $request, string $path): string
     {
-        return $path . (!$queryString ? '' : '?' . $queryString);
+        $qs = $request->getQueryString();
+        return $request->getUriForPath($path) . ($qs ? '?' . $qs : '');
     }
 
     private function isDebugRequest(Request $request): bool

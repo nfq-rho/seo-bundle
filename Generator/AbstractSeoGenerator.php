@@ -15,15 +15,15 @@ use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Model\SeoSlug;
 use Nfq\SeoBundle\Model\SeoSlugInterface;
 use Psr\Container\ContainerInterface;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\PropertyAccess\PropertyPathBuilder;
-use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 /**
  * Class AbstractSeoGenerator
  * @package Nfq\SeoBundle\Generator
  */
-abstract class AbstractSeoGenerator implements SeoGeneratorInterface, ServiceSubscriberInterface
+abstract class AbstractSeoGeneratorBase implements SeoGeneratorInterface
 {
     /** @var string */
     private $currentRouteName;
@@ -139,5 +139,19 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, ServiceSub
         array $params
     ): array {
         return $allowedParams;
+    }
+}
+
+if (Kernel::VERSION_ID >= 42000) {
+    abstract class AbstractSeoGenerator extends AbstractSeoGeneratorBase
+        implements \Symfony\Contracts\Service\ServiceSubscriberInterface
+    {
+
+    }
+} else {
+    abstract class AbstractSeoGenerator extends AbstractSeoGeneratorBase
+        implements \Symfony\Component\DependencyInjection\ServiceSubscriberInterface
+    {
+
     }
 }

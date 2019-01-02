@@ -83,6 +83,10 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
 
         $seoData = $this->extractSeoDataFromRequest($request);
 
+        if (null === $seoData) {
+            return;
+        }
+
         $fullUri = $this->getFullUri($seoData['url'], $request->getQueryString());
 
         $this->sp->setLinkCanonical($fullUri);
@@ -109,6 +113,7 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
 
     private function extractSeoDataFromRequest(Request $request): ?array
     {
-        return $request->attributes->get('__nfq_seo');
+        $seoData = $request->attributes->get('__nfq_seo');
+        return empty($seoData) ? null : $seoData;
     }
 }
