@@ -61,7 +61,7 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
         $request = $event->getRequest();
 
         //We're only interested in master seo requests
-        if (!$event->isMasterRequest() || $this->isDebugRequest($request)) {
+        if (!$event->isMasterRequest() || $this->isFileRequest($request) || $this->isDebugRequest($request)) {
             return;
         }
 
@@ -99,6 +99,11 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
     private function getFullUri(string $path, ?string $queryString): string
     {
         return $this->sp->formatCanonicalUri($path . (!$queryString ? '' : '?' . $queryString));
+    }
+
+    private function isFileRequest(Request $request): bool
+    {
+        return (bool)preg_match('~\.[a-z0-9]{1,}$~', $request->getRequestUri());
     }
 
     private function isDebugRequest(Request $request): bool

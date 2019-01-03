@@ -18,7 +18,7 @@ use Nfq\SeoBundle\Entity\SeoInterface;
  * @ORM\MappedSuperclass(repositoryClass="Nfq\SeoBundle\Repository\SeoRepository")
  * @ORM\HasLifecycleCallbacks
  */
-class SeoUrl
+abstract class SeoUrl implements SeoInterface
 {
     /**
      * @var int
@@ -80,7 +80,7 @@ class SeoUrl
      * @ORM\PreUpdate
      * @ORM\PrePersist
      */
-    public function onPrePersist()
+    public function updateTimestamp(): void
     {
         $this->timestamp = new \DateTime();
     }
@@ -170,26 +170,26 @@ class SeoUrl
         return $this->status;
     }
 
-    public function setSeoPathHash(string $seoPathHash): SeoInterface
+    public function setSeoPathHash(int $seoPathHash): SeoInterface
     {
         $this->seoPathHash = $seoPathHash;
 
         return $this;
     }
 
-    public function getSeoPathHash(): string
+    public function getSeoPathHash(): int
     {
         return $this->seoPathHash;
     }
 
-    public function setStdPathHash(string $stdPathHash): SeoInterface
+    public function setStdPathHash(int $stdPathHash): SeoInterface
     {
         $this->stdPathHash = $stdPathHash;
 
         return $this;
     }
 
-    public function getStdPathHash(): string
+    public function getStdPathHash(): int
     {
         return $this->stdPathHash;
     }

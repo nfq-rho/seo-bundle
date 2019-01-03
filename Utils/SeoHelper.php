@@ -20,20 +20,22 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SeoHelper
 {
-    public static function isUrlAccessible(string $uri): bool
+    public static function getAccessibleUrl(string $uri, bool $followLocation = false): ?string
     {
         $context = stream_context_create([
             'http' => [
-                'method' => 'HEAD'
+                'method' => 'HEAD',
+                'follow_location' => $followLocation
             ]
         ]);
 
         $headers = @get_headers($uri, 1, $context);
+
         if (!$headers || !preg_match('#HTTP/\d+\.\d+ (?P<response_code>\d+)#', $headers[0], $matches)) {
-            return false;
+            return null;
         }
 
-        return in_array(
+        if (!\in_array(
             (int)$matches['response_code'],
             [
                 Response::HTTP_OK,
@@ -43,7 +45,11 @@ class SeoHelper
                 Response::HTTP_PERMANENTLY_REDIRECT,
             ],
             true
-        );
+        )) {
+            return null;
+        }
+
+        return $headers['Location'] ?? $uri;
     }
 
     public static function getUri(string $uri, ?array $params): string
@@ -61,7 +67,7 @@ class SeoHelper
 
         return $parsed;
     }
-    
+
     /**
      * @param array|string $data
      */
@@ -133,7 +139,7 @@ class SeoHelper
         if (empty($locale) && $fallbackLocale) {
             $locale = $fallbackLocale;
         }
-        
+
         [$lang,] = explode('_', $locale);
         return $lang;
     }

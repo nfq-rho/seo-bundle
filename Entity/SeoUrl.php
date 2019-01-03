@@ -23,7 +23,7 @@ use Nfq\SeoBundle\Entity\MappedSuperclass\SeoUrl as SeoBase;
  *      }
  * )
  */
-class SeoUrl extends SeoBase implements SeoInterface
+class SeoUrl extends SeoBase
 {
 
 }

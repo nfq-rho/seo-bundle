@@ -40,9 +40,9 @@ class SegmentBasedNotFoundResolver implements NotFoundResolverInterface
             $newPath = substr($failedPath, 0, strrpos($failedPath, '/'));
             $newUri = $this->getFullUri($request, $newPath);
             $failedPath = $newPath;
-        } while (!empty($newPath) && !SeoHelper::isUrlAccessible($newUri));
+        } while (!empty($newPath) && null !== $accessibleUrl = SeoHelper::getAccessibleUrl($newUri));
 
-        return $newUri;
+        return $accessibleUrl;
     }
 
     private function getFullUri(Request $request, string $path): string

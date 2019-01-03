@@ -203,9 +203,9 @@ class SeoManager
 
         $seoUrl
             ->setStdUrl(SeoHelper::buildStdUrl($hashParams))
-            ->setStdPathHash(SeoHelper::generateHash($hashParams))
+            ->setStdPathHash((int)SeoHelper::generateHash($hashParams))
             ->setSeoUrl($seoUrlStr)
-            ->setSeoPathHash($seoHashStr)
+            ->setSeoPathHash((int)$seoHashStr)
             ->setEntityId($seoSlug->getEntityId())
             ->setLocale($seoSlug->getLocale())
             ->setStatus(SeoInterface::STATUS_OK)

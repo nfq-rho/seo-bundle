@@ -60,8 +60,10 @@ class SeoRouterSubscriber implements EventSubscriberInterface
 
     public function onKernelRequest(GetResponseEvent $event): void
     {
-        //We're only interested in master requests
-        if (!$event->isMasterRequest() || $this->isDebugRequest($event->getRequest())) {
+        $request = $event->getRequest();
+
+        //We're only interested in master page requests
+        if (!$event->isMasterRequest() || $this->isFileRequest($request) || $this->isDebugRequest($request)) {
             return;
         }
 
@@ -69,7 +71,7 @@ class SeoRouterSubscriber implements EventSubscriberInterface
 
         $this->handleStdToSeoRedirect($event);
 
-        $seoData = $this->extractSeoDataFromRequest($event->getRequest());
+        $seoData = $this->extractSeoDataFromRequest($request);
 
         if (null === $seoData) {
             return;
@@ -193,6 +195,11 @@ class SeoRouterSubscriber implements EventSubscriberInterface
     {
         $qs = $request->getQueryString();
         return $request->getUriForPath($path) . ($qs ? '?' . $qs : '');
+    }
+
+    private function isFileRequest(Request $request): bool
+    {
+        return (bool)preg_match('~\.[a-z0-9]{1,}$~', $request->getRequestUri());
     }
 
     private function isDebugRequest(Request $request): bool

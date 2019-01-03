@@ -170,7 +170,7 @@ class SeoRepository extends ServiceEntityRepository
             : substr_replace($seoUrl, $slugSeparator . $nextCount, $match[0][1]);
 
         $seoUrlNew->setSeoUrl($seoUrl);
-        $seoUrlNew->setSeoPathHash(SeoHelper::generateHash($seoUrlNew->getSeoUrl()));
+        $seoUrlNew->setSeoPathHash((int)SeoHelper::generateHash($seoUrlNew->getSeoUrl()));
     }
 
     public function save(SeoInterface $entity): int

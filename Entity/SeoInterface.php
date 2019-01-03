@@ -27,9 +27,9 @@ interface SeoInterface
 
     public function getParsedStdUrl(bool $decode = false): array;
     
-    public function setStdPathHash(string $stdPathHash): SeoInterface;
+    public function setStdPathHash(int $stdPathHash): SeoInterface;
 
-    public function getStdPathHash(): string;
+    public function getStdPathHash(): int;
 
     public function setSeoUrl(string $seoUrl): SeoInterface;
 
@@ -51,9 +51,9 @@ interface SeoInterface
 
     public function getRouteName(): string;
 
-    public function setSeoPathHash(string $seoPathHash): SeoInterface;
+    public function setSeoPathHash(int $seoPathHash): SeoInterface;
 
-    public function getSeoPathHash(): string;
+    public function getSeoPathHash(): int;
 
     public function isOK(): bool;
 
