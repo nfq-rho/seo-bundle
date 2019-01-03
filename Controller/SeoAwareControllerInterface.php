@@ -11,11 +11,6 @@
 
 namespace Nfq\SeoBundle\Controller;
 
-use Symfony\Component\Debug\Exception\FlattenException;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Log\DebugLoggerInterface;
-
 /**
  * Interface SeoAwareControllerInterface
  * @package Nfq\SeoBundle\Controller

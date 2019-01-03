@@ -28,11 +28,8 @@ class SegmentBasedNotFoundResolver implements NotFoundResolverInterface
      * /segment-1/segment2/segment-3 -> return 404, remove /segment-3
      * /segment-1/segment2 -> return 404, remove /segment2
      * /segment-1 -> return 200, 301, 302, 307 or 308 OK this is the correct url return it
-     *
-     * @param Request $request
-     * @return string
      */
-    public function resolve(Request $request): string
+    public function resolve(Request $request): ?string
     {
         $failedPath = $request->getPathInfo();
 

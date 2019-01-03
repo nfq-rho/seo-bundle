@@ -16,7 +16,6 @@ use Nfq\SeoBundle\Page\SeoPageInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
@@ -39,7 +38,6 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
     {
         return [
             KernelEvents::CONTROLLER => ['onKernelController'],
-            KernelEvents::REQUEST => ['onKernelRequest'],
         ];
     }
 
@@ -53,19 +51,8 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
 
         if ($controller[0] instanceof SeoAwareControllerInterface) {
             $event->getRequest()->attributes->set(self::SEO_CONTROLLER_REQUEST_ATTRIBUTE, true);
+            $this->setGenericSeoPageData($event->getRequest());
         }
-    }
-
-    public function onKernelRequest(GetResponseEvent $event): void
-    {
-        $request = $event->getRequest();
-
-        //We're only interested in master seo requests
-        if (!$event->isMasterRequest() || $this->isFileRequest($request) || $this->isDebugRequest($request)) {
-            return;
-        }
-
-        $this->setGenericSeoPageData($request);
     }
 
     private function setGenericSeoPageData(Request $request): void
@@ -99,16 +86,6 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
     private function getFullUri(string $path, ?string $queryString): string
     {
         return $this->sp->formatCanonicalUri($path . (!$queryString ? '' : '?' . $queryString));
-    }
-
-    private function isFileRequest(Request $request): bool
-    {
-        return (bool)preg_match('~\.[a-z0-9]{1,}$~', $request->getRequestUri());
-    }
-
-    private function isDebugRequest(Request $request): bool
-    {
-        return $request->attributes->get('_route') === '_wdt';
     }
 
     private function isSeoRequest(Request $request): bool
