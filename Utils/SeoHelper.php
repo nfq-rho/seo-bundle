@@ -12,6 +12,7 @@
 namespace Nfq\SeoBundle\Utils;
 
 use Nfq\SeoBundle\Model\SeoSlug;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Class SeoHelper
@@ -19,6 +20,32 @@ use Nfq\SeoBundle\Model\SeoSlug;
  */
 class SeoHelper
 {
+    public static function isUrlAccessible(string $uri): bool
+    {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'HEAD'
+            ]
+        ]);
+
+        $headers = @get_headers($uri, 1, $context);
+        if (!$headers || !preg_match('#HTTP/\d+\.\d+ (?P<response_code>\d+)#', $headers[0], $matches)) {
+            return false;
+        }
+
+        return in_array(
+            (int)$matches['response_code'],
+            [
+                Response::HTTP_OK,
+                Response::HTTP_MOVED_PERMANENTLY,
+                Response::HTTP_FOUND,
+                Response::HTTP_TEMPORARY_REDIRECT,
+                Response::HTTP_PERMANENTLY_REDIRECT,
+            ],
+            true
+        );
+    }
+
     public static function getUri(string $uri, ?array $params): string
     {
         if (isset($params) === true && !empty($params)) {

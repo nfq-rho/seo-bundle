@@ -19,5 +19,5 @@ use Symfony\Component\HttpFoundation\Request;
  */
 interface NotFoundResolverInterface
 {
-    public function resolve(Request $request): string;
+    public function resolve(Request $request): ?string;
 }

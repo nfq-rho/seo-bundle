@@ -94,7 +94,13 @@ class SeoRouterSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $this->issueRedirect($event, $this->notFoundResolver->resolve($request));
+        $newUrl = $this->notFoundResolver->resolve($request);
+
+        if (null === $newUrl) {
+            return;
+        }
+
+        $this->issueRedirect($event, $newUrl);
     }
 
     private function handleCaseRedirect(GetResponseEvent $event, array $seoData): void
