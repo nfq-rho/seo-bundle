@@ -4,4 +4,5 @@ services:
         arguments:
             $storeSerialized: false
         tags:
-            - { name: cache.pool }
+            - { name: cache.pool, clearer: cache.default_clearer }
+            - { name: monolog.logger, channel: cache }
