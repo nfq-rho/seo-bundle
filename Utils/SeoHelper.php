@@ -20,12 +20,16 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SeoHelper
 {
-    public static function getAccessibleUrl(string $uri, bool $followLocation = false): ?string
+    public static function getAccessibleUrl(string $uri): ?string
     {
         $context = stream_context_create([
             'http' => [
                 'method' => 'HEAD',
-                'follow_location' => $followLocation
+                'follow_location' => 0,
+                'protocol_version' => 1.1,
+                'header' => [
+                    'Connection: close',
+                ],
             ]
         ]);
 

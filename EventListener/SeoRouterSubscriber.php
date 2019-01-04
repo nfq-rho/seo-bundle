@@ -92,6 +92,7 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         $request = $event->getRequest();
 
         if (null === $this->notFoundResolver
+            || !$request->isMethod('GET')
             || $request->attributes->get('_controller') !== SeoRouter::SEO_EXCEPTION_CONTROLLER) {
             return;
         }
