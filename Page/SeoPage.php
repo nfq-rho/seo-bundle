@@ -98,7 +98,7 @@ class SeoPage implements SeoPageInterface
         return $this;
     }
 
-    public function getHost(): string
+    public function getHost(): ?string
     {
         return $this->host;
     }
@@ -109,7 +109,7 @@ class SeoPage implements SeoPageInterface
         return $this;
     }
 
-    public function getSimpleHost(): string
+    public function getSimpleHost(): ?string
     {
         return $this->simpleHost;
     }

@@ -24,11 +24,11 @@ interface SeoPageInterface
 
     public function setHost(string $host): SeoPageInterface;
 
-    public function getHost(): string;
+    public function getHost(): ?string;
 
     public function setSimpleHost(string $simpleHost): SeoPageInterface;
 
-    public function getSimpleHost(): string;
+    public function getSimpleHost(): ?string;
 
     public function setLocale(string $locale): SeoPageInterface;
 
