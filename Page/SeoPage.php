@@ -151,10 +151,22 @@ class SeoPage implements SeoPageInterface
 
     public function addMeta(string $type, string $name, $content, array $extras = []): SeoPageInterface
     {
+        $hasMeta = isset($this->metas[$type][$name]);
+
+        if (null === $content) {
+            if ($hasMeta) {
+                unset($this->metas[$type][$name]);
+            }
+
+            return $this;
+        }
+
         if (!isset($this->metas[$type])) {
             $this->metas[$type] = [];
         }
+
         $this->metas[$type][$name] = [$content, $extras];
+
         return $this;
     }
 
@@ -261,7 +273,7 @@ class SeoPage implements SeoPageInterface
         return $this->getLinks(self::SEO_REL_ALTERNATE);
     }
 
-    public function formatCanonicalUri(string $uri): string
+    public function formatCanonicalUrl(string $uri): string
     {
         $allowedQueryParams = $this->getLinkOptions('allowed_canonical_parameters');
         $parsedQueryString = parse_url(rawurldecode($uri), PHP_URL_QUERY);

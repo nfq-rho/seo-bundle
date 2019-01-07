@@ -11,7 +11,6 @@
 
 namespace Nfq\SeoBundle\EventListener;
 
-use Nfq\SeoBundle\Controller\SeoAwareControllerInterface;
 use Nfq\SeoBundle\Page\SeoPageInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,8 +23,6 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class SeoPageDataSubscriber implements EventSubscriberInterface
 {
-    private const SEO_CONTROLLER_REQUEST_ATTRIBUTE = '__nfq_seo.controller';
-
     /** @var SeoPageInterface */
     private $sp;
 
@@ -43,16 +40,17 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
 
     public function onKernelController(FilterControllerEvent $event): void
     {
+        $request = $event->getRequest();
         $controller = $event->getController();
 
-        if (!\is_array($controller)) {
+        if (!\is_array($controller)
+            || !$event->isMasterRequest()
+            || $this->isFileRequest($request)
+            || $this->isDebugRequest($request)) {
             return;
         }
 
-        if ($controller[0] instanceof SeoAwareControllerInterface) {
-            $event->getRequest()->attributes->set(self::SEO_CONTROLLER_REQUEST_ATTRIBUTE, true);
-            $this->setGenericSeoPageData($event->getRequest());
-        }
+        $this->setGenericSeoPageData($request);
     }
 
     private function setGenericSeoPageData(Request $request): void
@@ -61,7 +59,7 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
         $this->sp->setHost($request->getSchemeAndHttpHost());
         $this->sp->setSimpleHost('http://' . $request->getHost());
 
-        $this->sp->addMeta('property', 'og:url', $this->sp->formatCanonicalUri($request->getUri()));
+        $this->sp->addMeta('property', 'og:url', $this->sp->formatCanonicalUrl($request->getUri()));
         $this->sp->addMeta('property', 'og:type', 'website');
 
         if (!$this->isSeoRequest($request)) {
@@ -74,7 +72,7 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $fullUri = $this->getFullUri($seoData['url'], $request->getQueryString());
+        $fullUri = $this->getFullUrl($seoData['url'], $request->getQueryString());
 
         $this->sp->setLinkCanonical($fullUri);
 
@@ -83,9 +81,19 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
         $this->sp->setLangAlternates($seoData['alternates']);
     }
 
-    private function getFullUri(string $path, ?string $queryString): string
+    private function getFullUrl(string $path, ?string $queryString): string
     {
-        return $this->sp->formatCanonicalUri($path . (!$queryString ? '' : '?' . $queryString));
+        return $this->sp->formatCanonicalUrl($path . (!$queryString ? '' : '?' . $queryString));
+    }
+
+    private function isFileRequest(Request $request): bool
+    {
+        return (bool)preg_match('~\.[a-z0-9]{1,}$~', $request->getRequestUri());
+    }
+
+    private function isDebugRequest(Request $request): bool
+    {
+        return $request->attributes->get('_route') === '_wdt';
     }
 
     private function isSeoRequest(Request $request): bool

@@ -160,7 +160,7 @@ class SeoExtension extends \Twig_Extension
             return sprintf(
                 "<link rel=\"%s\" href=\"%s\" />\n",
                 SeoPageInterface::SEO_REL_CANONICAL,
-                $this->sp->formatCanonicalUri($canonical)
+                $this->sp->formatCanonicalUrl($canonical)
             );
         }
 
@@ -175,7 +175,7 @@ class SeoExtension extends \Twig_Extension
             $html .= sprintf(
                 "<link rel=\"%s\" href=\"%s\" hreflang=\"%s\" />\n",
                 SeoPageInterface::SEO_REL_ALTERNATE,
-                $this->sp->formatCanonicalUri($uri),
+                $this->sp->formatCanonicalUrl($uri),
                 $hrefLang
             );
         }
@@ -193,7 +193,7 @@ class SeoExtension extends \Twig_Extension
             $html .= sprintf(
                 "<link rel=\"%s\" href=\"%s\" />",
                 SeoPageInterface::SEO_REL_PREV,
-                $this->sp->formatCanonicalUri($host . $prev)
+                $this->sp->formatCanonicalUrl($host . $prev)
             );
         }
 
@@ -202,7 +202,7 @@ class SeoExtension extends \Twig_Extension
             $html .= sprintf(
                 "<link rel=\"%s\" href=\"%s\" />",
                 SeoPageInterface::SEO_REL_NEXT,
-                $this->sp->formatCanonicalUri($host . $next)
+                $this->sp->formatCanonicalUrl($host . $next)
             );
         }
 
@@ -211,7 +211,7 @@ class SeoExtension extends \Twig_Extension
 
     private function normalize(string $string, array $extras = []): string
     {
-        if (isset($extras['trans'])) {
+        if (isset($extras['trans']) && true === $extras['trans']) {
             unset($extras['trans']);
             $string = $this->translator->trans($string, $extras);
         }
