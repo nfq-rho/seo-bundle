@@ -38,11 +38,6 @@ class SeoInvalidateSubscriber implements EventSubscriber
         ];
     }
 
-    public function postPersist(LifecycleEventArgs $event): void
-    {
-        $this->invalidate($event);
-    }
-
     public function postUpdate(LifecycleEventArgs $event): void
     {
         $this->invalidate($event);

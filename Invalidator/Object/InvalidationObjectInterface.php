@@ -18,7 +18,7 @@ namespace Nfq\SeoBundle\Invalidator\Object;
 interface InvalidationObjectInterface
 {
     /**
-     * Where part by default has following query "su.route_name = :route_name AND su.locale = :locale"
+     * Where part by default has following query "su.route_names IN (:route_names) AND su.locale = :locale"
      */
     public function getWherePart(): string;
 
@@ -26,12 +26,14 @@ interface InvalidationObjectInterface
 
     public function getWhereParams(): array;
 
+    public function getWhereParam(string $paramName);
+
     /**
      * @return object
      */
     public function getEntity();
 
-    public function getLocale(): string;
+    public function getLocale(): ?string;
 
     public function hasChanges(): bool;
 

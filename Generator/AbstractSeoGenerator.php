@@ -142,7 +142,7 @@ abstract class AbstractSeoGeneratorBase implements SeoGeneratorInterface
     }
 }
 
-if (Kernel::VERSION_ID >= 42000) {
+if (Kernel::VERSION_ID >= 40200) {
     abstract class AbstractSeoGenerator extends AbstractSeoGeneratorBase
         implements \Symfony\Contracts\Service\ServiceSubscriberInterface
     {

@@ -62,14 +62,20 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
      */
     protected function executeRemoval(InvalidationObjectInterface $invalidationObject): void
     {
-        $statement = 'DELETE FROM seo_url WHERE route_name = :routeName AND entity_id = :entityId';
+        $queryString = 'UPDATE seo_url su SET su.status = :invalid_status WHERE su.route_name = :route_name AND su.entity_id = :entity_id';
 
-        $whereParams = [
-            'routeName' => $this->getRouteName(),
-            'entityId' => $invalidationObject->getEntity()->getId(),
-        ];
+        $whereParams = array_merge([
+            'route_name' => $this->getRouteName(),
+            'entity_id' => $invalidationObject->getEntity()->getId(),
+        ], $invalidationObject->getWhereParams(), [
+            'invalid_status' => SeoInterface::STATUS_INVALID,
+        ]);
 
-        $this->executeStatement($statement, $whereParams);
+        $whereParams = array_filter($whereParams, function ($value) {
+            return $value !== null && $value !== [];
+        });
+
+        $this->executeStatement($queryString, $whereParams);
     }
 
     /**
@@ -81,10 +87,8 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
             return;
         }
 
-        $queryString = $this->getInvalidationQueryString($invalidationObject);
-
         $whereParams = array_merge([
-            'route_name' => $this->getRouteName(),
+            'route_names' => [$this->getRouteName()],
             'locale' => $invalidationObject->getLocale(),
         ], $invalidationObject->getWhereParams(), [
             'active_status' => SeoInterface::STATUS_OK,
@@ -92,10 +96,13 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
         ]);
 
         $whereParams = array_filter($whereParams, function ($value) {
-            return $value !== null;
+            return $value !== null && $value !== [];
         });
 
-        $this->executeStatement($queryString, $whereParams);
+        $this->executeStatement(
+            $this->getInvalidationQueryString($invalidationObject, $whereParams),
+            $whereParams
+        );
     }
 
     /**
@@ -104,6 +111,11 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
      */
     protected function executeStatement(string $queryString, array $params): void
     {
+        // Convert all params to string
+        $params = array_map(function ($param): string {
+            return \is_array($param) ? implode(',', $param) : (string)$param;
+        }, $params);
+
         $stmt = $this->getEntityManager()->getConnection()->prepare($queryString);
         $stmt->execute($params);
         $stmt->closeCursor();
@@ -113,18 +125,24 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
      * Builds invalidation query based on given invalidation object. The invalidation is executed only
      * for active urls.
      */
-    private function getInvalidationQueryString(InvalidationObjectInterface $invalidationObject): string
-    {
-        $query = 'UPDATE seo_url su ';
+    private function getInvalidationQueryString(
+        InvalidationObjectInterface $invalidationObject,
+        array $whereParams
+    ): string {
+        $query = 'UPDATE seo_url su';
 
         if ($joinPart = $invalidationObject->getJoinPart()) {
-            $query .= sprintf('JOIN %s ', $joinPart);
+            $query .= sprintf(' JOIN %s', $joinPart);
         }
 
-        $query .= 'SET su.status = :target_status WHERE su.status = :active_status AND su.route_name = :route_name';
+        $query .= ' SET su.status = :target_status WHERE su.status = :active_status';
 
-        if (null !== $invalidationObject->getLocale()) {
+        if (isset($whereParams['locale'])) {
             $query .= ' AND su.locale = :locale';
+        }
+
+        if (isset($whereParams['route_names'])) {
+            $query .= ' AND su.route_name = :route_names';
         }
 
         if ($wherePart = $invalidationObject->getWherePart()) {
@@ -135,7 +153,7 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
     }
 }
 
-if (Kernel::VERSION_ID >= 42000) {
+if (Kernel::VERSION_ID >= 40200) {
     abstract class AbstractSeoInvalidator extends AbstractSeoInvalidatorBase
         implements \Symfony\Contracts\Service\ServiceSubscriberInterface
     {

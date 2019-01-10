@@ -11,16 +11,17 @@
 
 namespace Nfq\SeoBundle\Invalidator\Object;
 
+use Doctrine\ORM\EntityManagerInterface;
+
 /**
  * Interface ObjectFactoryInterface
  * @package Nfq\SeoBundle\Invalidator\Object
  */
 interface ObjectFactoryInterface
 {
-    /**
-     * @param object $entity
-     * @param string[] $changeSet
-     * @throws \InvalidArgumentException
-     */
-    public static function buildInvalidationObject($entity, array $changeSet): InvalidationObjectInterface;
+    public static function buildInvalidationObject(
+        EntityManagerInterface $em,
+        $entity,
+        array $changeSet
+    ): InvalidationObjectInterface;
 }

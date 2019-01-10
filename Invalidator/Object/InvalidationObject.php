@@ -11,6 +11,7 @@
 
 namespace Nfq\SeoBundle\Invalidator\Object;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Entity\SeoInterface;
 
 /**
@@ -19,17 +20,20 @@ use Nfq\SeoBundle\Entity\SeoInterface;
  */
 abstract class InvalidationObject implements InvalidationObjectInterface
 {
+    /** @var EntityManagerInterface */
+    private $em;
+
+    /** @var object */
+    private $entity;
+
     /** @var array */
     protected $changeSet = [];
 
     /** @var bool */
     private $hasChanges = false;
 
-    /** @var object */
-    private $entity;
-
     /** @var string|null */
-    private $locale = null;
+    private $locale;
 
     /**
      * Get an array of attribute names which should cause invalidation when modified.
@@ -38,8 +42,9 @@ abstract class InvalidationObject implements InvalidationObjectInterface
      */
     abstract protected function getInvalidationAttributes(): array;
 
-    public function __construct($entity, array $changeSet)
+    public function __construct(EntityManagerInterface $em, $entity, array $changeSet)
     {
+        $this->em = $em;
         $this->changeSet = $changeSet;
         $this->entity = $entity;
 
@@ -50,7 +55,13 @@ abstract class InvalidationObject implements InvalidationObjectInterface
         $this->checkForChanges();
     }
 
-    public function getLocale(): string
+    public function getWhereParam(string $paramName)
+    {
+        $params = $this->getWhereParams();
+        return $params[$paramName] ?? null;
+    }
+
+    public function getLocale(): ?string
     {
         return $this->locale;
     }
@@ -68,6 +79,11 @@ abstract class InvalidationObject implements InvalidationObjectInterface
     public function getInvalidationStatus(): int
     {
         return SeoInterface::STATUS_REDIRECT;
+    }
+
+    protected function getEntityManager(): EntityManagerInterface
+    {
+        return $this->em;
     }
 
     protected function checkForChanges(): void

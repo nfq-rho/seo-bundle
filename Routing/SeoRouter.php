@@ -445,7 +445,7 @@ class SeoRouterBase implements RouterInterface, RequestMatcherInterface
     }
 }
 
-if (Kernel::VERSION_ID >= 42000) {
+if (Kernel::VERSION_ID >= 40200) {
     class SeoRouter extends SeoRouterBase implements \Symfony\Contracts\Service\ServiceSubscriberInterface
     {
 
