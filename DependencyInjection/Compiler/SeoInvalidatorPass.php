@@ -40,7 +40,8 @@ class SeoInvalidatorPass implements CompilerPassInterface
                     [
                         new Reference($id),
                         $attribute['route_name'],
-                        $attribute['entity']
+                        $attribute['entity'],
+                        $attribute['on'] ?? 'postUpdate,preRemove'
                     ]
                 );
             }
