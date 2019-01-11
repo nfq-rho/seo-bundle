@@ -20,13 +20,11 @@ interface InvalidationObjectInterface
     /**
      * Where part by default has following query "su.route_names IN (:route_names) AND su.locale = :locale"
      */
-    public function getWherePart(): string;
+    public function getWherePart(): ?string;
 
-    public function getJoinPart(): string;
+    public function getJoinPart(): ?string;
 
     public function getWhereParams(): array;
-
-    public function getWhereParam(string $paramName);
 
     /**
      * @return object

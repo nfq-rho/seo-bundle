@@ -29,9 +29,9 @@ interface SeoInvalidatorInterface
      * Invalidate seo url for given entity based on given change-set
      *
      * @param object $entity
-     * @param string[] $changeSet
+     * @param null|string[] $changeSet
      */
-    public function invalidate($entity, array $changeSet): void;
+    public function invalidate($entity, ?array $changeSet): void;
 
     /**
      * Remove seo urls for given entity

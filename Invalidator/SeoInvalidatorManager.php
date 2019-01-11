@@ -20,13 +20,23 @@ class SeoInvalidatorManager
     /** @var SeoInvalidatorInterface[] */
     private $invalidators = [];
 
-    /** @var string[] */
+    /** @var string[][] */
     private $routeEntityMap = [];
 
-    public function addInvalidator(SeoInvalidatorInterface $invalidator, string $routeName, string $entityClass): void
-    {
-        if (!isset($this->invalidators[$routeName])) {
-            $this->invalidators[$routeName] = $invalidator;
+    public function addInvalidator(
+        SeoInvalidatorInterface $invalidator,
+        string $routeName,
+        string $entityClass,
+        string $onEvents
+    ): void {
+        $onEventsArr = explode(',', $onEvents);
+
+        foreach ($onEventsArr as $onEvent) {
+            if (!isset($this->invalidators[$onEvent])) {
+                $this->invalidators[$onEvent] = [];
+            }
+
+            $this->invalidators[$onEvent][$routeName] = $invalidator;
         }
 
         $this->addToRouteEntityMap($routeName, $entityClass);
@@ -35,11 +45,11 @@ class SeoInvalidatorManager
     /**
      * @throws \InvalidArgumentException
      */
-    public function getInvalidator(string $entityClass): SeoInvalidatorInterface
+    public function getInvalidator(string $entityClass, string $eventName): SeoInvalidatorInterface
     {
         foreach ($this->routeEntityMap as $routeName => $invalidatorClasses) {
-            if (false !== $idx = array_search($entityClass, $invalidatorClasses)) {
-                return $this->invalidators[$routeName]->setRouteName($routeName);
+            if (\in_array($entityClass, $invalidatorClasses, true)) {
+                return $this->invalidators[$eventName][$routeName]->setRouteName($routeName);
             }
         }
 
@@ -53,7 +63,7 @@ class SeoInvalidatorManager
      */
     private function addToRouteEntityMap(string $type, string $entityClass): void
     {
-        if (isset($this->routeEntityMap[$type]) && in_array($entityClass, $this->routeEntityMap[$type])) {
+        if (isset($this->routeEntityMap[$type]) && \in_array($entityClass, $this->routeEntityMap[$type], true)) {
             throw new \InvalidArgumentException("Duplicated entity `{$entityClass}` for type `{$type}` detected");
         }
 

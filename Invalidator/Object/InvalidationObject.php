@@ -26,9 +26,6 @@ abstract class InvalidationObject implements InvalidationObjectInterface
     /** @var object */
     private $entity;
 
-    /** @var array */
-    protected $changeSet = [];
-
     /** @var bool */
     private $hasChanges = false;
 
@@ -42,23 +39,16 @@ abstract class InvalidationObject implements InvalidationObjectInterface
      */
     abstract protected function getInvalidationAttributes(): array;
 
-    public function __construct(EntityManagerInterface $em, $entity, array $changeSet)
+    public function __construct(EntityManagerInterface $em, $entity, ?array $changeSet)
     {
         $this->em = $em;
-        $this->changeSet = $changeSet;
         $this->entity = $entity;
 
         if (method_exists($entity, 'getLocale')) {
             $this->locale = $entity->getLocale();
         }
 
-        $this->checkForChanges();
-    }
-
-    public function getWhereParam(string $paramName)
-    {
-        $params = $this->getWhereParams();
-        return $params[$paramName] ?? null;
+        $this->checkForChanges($changeSet);
     }
 
     public function getLocale(): ?string
@@ -81,16 +71,38 @@ abstract class InvalidationObject implements InvalidationObjectInterface
         return SeoInterface::STATUS_REDIRECT;
     }
 
+    public function getJoinPart(): ?string
+    {
+        return null;
+    }
+
+    public function getWhereParams(): array
+    {
+        return [];
+    }
+
+    public function getWherePart(): ?string
+    {
+        return null;
+    }
+
     protected function getEntityManager(): EntityManagerInterface
     {
         return $this->em;
     }
 
-    protected function checkForChanges(): void
+    /**
+     * @param null|string[] $changeSet
+     */
+    protected function checkForChanges(?array $changeSet): void
     {
+        if (null === $changeSet) {
+            return;
+        }
+
         $flippedInvalidationAttributes = array_flip($this->getInvalidationAttributes());
 
-        if ($changedAttributes = array_intersect_key($this->changeSet, $flippedInvalidationAttributes)) {
+        if ($changedAttributes = array_intersect_key($changeSet, $flippedInvalidationAttributes)) {
             $this->hasChanges = true;
         }
     }

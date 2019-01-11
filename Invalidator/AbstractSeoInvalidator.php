@@ -88,7 +88,8 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
         }
 
         $whereParams = array_merge([
-            'route_names' => [$this->getRouteName()],
+            'route_name' => $this->getRouteName(),
+            'entity_id' => $invalidationObject->getEntity()->getId(),
             'locale' => $invalidationObject->getLocale(),
         ], $invalidationObject->getWhereParams(), [
             'active_status' => SeoInterface::STATUS_OK,
@@ -132,22 +133,26 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
         $query = 'UPDATE seo_url su';
 
         if ($joinPart = $invalidationObject->getJoinPart()) {
-            $query .= sprintf(' JOIN %s', $joinPart);
+            $query .= sprintf(' JOIN %s ', $joinPart);
         }
 
-        $query .= ' SET su.status = :target_status WHERE su.status = :active_status';
+        $query .= ' SET su.status = :target_status WHERE su.status = :active_status ';
 
         if (isset($whereParams['locale'])) {
-            $query .= ' AND su.locale = :locale';
+            $query .= ' AND su.locale = :locale ';
         }
 
-        if (isset($whereParams['route_names'])) {
-            $query .= ' AND su.route_name = :route_names';
+        $query .= ' AND ( ';
+
+        if (isset($whereParams['route_name'], $whereParams['entity_id'])) {
+            $query .= ' (su.route_name = :route_name AND su.entity_id = :entity_id) ';
         }
 
         if ($wherePart = $invalidationObject->getWherePart()) {
-            $query .= sprintf(' AND %s', $wherePart);
+            $query .= ' ' . $wherePart  . ' ';
         }
+
+        $query .= ' ) ';
 
         return $query;
     }

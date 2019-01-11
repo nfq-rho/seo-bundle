@@ -22,6 +22,6 @@ interface ObjectFactoryInterface
     public static function buildInvalidationObject(
         EntityManagerInterface $em,
         $entity,
-        array $changeSet
+        ?array $changeSet
     ): InvalidationObjectInterface;
 }
