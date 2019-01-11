@@ -32,12 +32,13 @@ class SegmentBasedNotFoundResolver implements NotFoundResolverInterface
     public function resolve(Request $request): ?string
     {
         $failedPath = $request->getPathInfo();
+        $failedUrl = $request->getUri();
 
         do {
             $newPath = substr($failedPath, 0, strrpos($failedPath, '/'));
-            $newUri = $this->getFullUri($request, $newPath);
+            $newUrl = $this->getFullUri($request, $newPath);
             $failedPath = $newPath;
-        } while (!empty($newPath) && null === $accessibleUrl = SeoHelper::getAccessibleUrl($newUri));
+        } while (!empty($newPath) && null === $accessibleUrl = $this->getAccessibleUrl($newUrl, $failedUrl));
 
         return $accessibleUrl;
     }
@@ -46,5 +47,17 @@ class SegmentBasedNotFoundResolver implements NotFoundResolverInterface
     {
         $qs = $request->getQueryString();
         return $request->getUriForPath($path) . ($qs ? '?' . $qs : '');
+    }
+
+    private function getAccessibleUrl(string $newUrl, string $failedUrl): ?string
+    {
+        $accessibleUrl = SeoHelper::getAccessibleUrl($newUrl);
+
+        // Prevent redirect loop if failed url is same as new accessible url
+        if ($failedUrl === $accessibleUrl) {
+            return null;
+        }
+
+        return $accessibleUrl;
     }
 }
