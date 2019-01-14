@@ -24,7 +24,16 @@ interface InvalidationObjectInterface
 
     public function getJoinPart(): ?string;
 
+    /**
+     * @return string[]
+     */
     public function getWhereParams(): array;
+
+    /**
+     * Specify custom param types. For example if parameter holds an array, it's type has to be specified
+     * @return string[]
+     */
+    public function getWhereParamTypes(): array;
 
     /**
      * @return object

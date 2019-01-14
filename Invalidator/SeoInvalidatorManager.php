@@ -37,6 +37,7 @@ class SeoInvalidatorManager
             }
 
             $this->invalidators[$onEvent][$routeName] = $invalidator;
+            $invalidator->addRoute($routeName);
         }
 
         $this->addToRouteEntityMap($routeName, $entityClass);
@@ -47,26 +48,31 @@ class SeoInvalidatorManager
      */
     public function getInvalidator(string $entityClass, string $eventName): SeoInvalidatorInterface
     {
+        $results = [];
+
         foreach ($this->routeEntityMap as $routeName => $invalidatorClasses) {
             if (\in_array($entityClass, $invalidatorClasses, true)) {
-                return $this->invalidators[$eventName][$routeName]->setRouteName($routeName);
+                $results[] = $this->invalidators[$eventName][$routeName];
             }
         }
 
-        throw new \InvalidArgumentException("No invalidator for entity `{$entityClass}` found");
+        if (empty($results)) {
+            throw new \InvalidArgumentException("No invalidator for entity `{$entityClass}` found");
+        }
+
+        return $results[1] ?? $results[0];
     }
 
     /**
-     * Map paths to type
-     *
      * @throws \InvalidArgumentException
      */
-    private function addToRouteEntityMap(string $type, string $entityClass): void
+    private function addToRouteEntityMap(string $routeName, string $entityClass): void
     {
-        if (isset($this->routeEntityMap[$type]) && \in_array($entityClass, $this->routeEntityMap[$type], true)) {
-            throw new \InvalidArgumentException("Duplicated entity `{$entityClass}` for type `{$type}` detected");
+        if (isset($this->routeEntityMap[$routeName])
+            && \in_array($entityClass, $this->routeEntityMap[$routeName], true)) {
+            throw new \InvalidArgumentException("Duplicated entity `{$entityClass}` for route `{$routeName}` detected");
         }
 
-        $this->routeEntityMap[$type][] = $entityClass;
+        $this->routeEntityMap[$routeName][] = $entityClass;
     }
 }

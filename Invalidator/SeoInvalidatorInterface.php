@@ -19,9 +19,9 @@ use Doctrine\ORM\EntityManagerInterface;
  */
 interface SeoInvalidatorInterface
 {
-    public function setRouteName(string $routeName): SeoInvalidatorInterface;
+    public function addRoute(string $routeName): void;
 
-    public function getRouteName(): string;
+    public function getRoutes(): array;
 
     public function getEntityManager(): EntityManagerInterface;
 

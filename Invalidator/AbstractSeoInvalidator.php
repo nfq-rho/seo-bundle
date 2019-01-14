@@ -11,6 +11,7 @@
 
 namespace Nfq\SeoBundle\Invalidator;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Invalidator\Object\InvalidationObjectInterface;
@@ -23,8 +24,8 @@ use Symfony\Component\HttpKernel\Kernel;
  */
 abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
 {
-    /** @var string */
-    private $currentRouteName;
+    /** @var string[] */
+    private $routes;
 
     /** @var ContainerInterface */
     private $locator;
@@ -32,6 +33,7 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
     public function __construct(ContainerInterface $locator)
     {
         $this->locator = $locator;
+        $this->routes = [];
     }
 
     public static function getSubscribedServices(): array
@@ -41,15 +43,18 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
         ];
     }
 
-    public function getRouteName(): string
+    public function addRoute(string $routeName): void
     {
-        return $this->currentRouteName;
+        if (in_array($routeName, $this->routes, true)) {
+            return;
+        }
+
+        $this->routes[] = $routeName;
     }
 
-    public function setRouteName(string $routeName): SeoInvalidatorInterface
+    public function getRoutes(): array
     {
-        $this->currentRouteName = $routeName;
-        return $this;
+        return $this->routes;
     }
 
     public function getEntityManager(): EntityManagerInterface
@@ -62,20 +67,28 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
      */
     protected function executeRemoval(InvalidationObjectInterface $invalidationObject): void
     {
-        $queryString = 'UPDATE seo_url su SET su.status = :invalid_status WHERE su.route_name = :route_name AND su.entity_id = :entity_id';
+        $queryString = <<<QUERY
+UPDATE seo_url su 
+  SET su.status = :invalid_status 
+WHERE su.route_name IN (:route_names)
+  AND su.entity_id = :entity_id
+QUERY;
 
-        $whereParams = array_merge([
-            'route_name' => $this->getRouteName(),
-            'entity_id' => $invalidationObject->getEntity()->getId(),
-        ], $invalidationObject->getWhereParams(), [
-            'invalid_status' => SeoInterface::STATUS_INVALID,
-        ]);
+        $whereParams = array_merge(
+            [
+                'route_names' => $this->getRoutes(),
+            ],
+            $invalidationObject->getWhereParams(),
+            [
+                'invalid_status' => SeoInterface::STATUS_INVALID,
+            ]
+        );
 
         $whereParams = array_filter($whereParams, function ($value) {
             return $value !== null && $value !== [];
         });
 
-        $this->executeStatement($queryString, $whereParams);
+        $this->executeStatement($queryString, $whereParams, $invalidationObject->getWhereParamTypes());
     }
 
     /**
@@ -87,14 +100,17 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
             return;
         }
 
-        $whereParams = array_merge([
-            'route_name' => $this->getRouteName(),
-            'entity_id' => $invalidationObject->getEntity()->getId(),
-            'locale' => $invalidationObject->getLocale(),
-        ], $invalidationObject->getWhereParams(), [
-            'active_status' => SeoInterface::STATUS_OK,
-            'target_status' => $invalidationObject->getInvalidationStatus()
-        ]);
+        $whereParams = array_merge(
+            [
+                'locale' => $invalidationObject->getLocale(),
+                'route_names' => $this->getRoutes(),
+            ],
+            $invalidationObject->getWhereParams(),
+            [
+                'active_status' => SeoInterface::STATUS_OK,
+                'target_status' => $invalidationObject->getInvalidationStatus()
+            ]
+        );
 
         $whereParams = array_filter($whereParams, function ($value) {
             return $value !== null && $value !== [];
@@ -102,24 +118,27 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
 
         $this->executeStatement(
             $this->getInvalidationQueryString($invalidationObject, $whereParams),
-            $whereParams
+            $whereParams,
+            $invalidationObject->getWhereParamTypes()
         );
     }
 
     /**
      * @param string[] $params
+     * @param string[] $types
      * @throws \Doctrine\DBAL\DBALException
      */
-    protected function executeStatement(string $queryString, array $params): void
+    protected function executeStatement(string $queryString, array $params, array $types): int
     {
-        // Convert all params to string
-        $params = array_map(function ($param): string {
-            return \is_array($param) ? implode(',', $param) : (string)$param;
-        }, $params);
-
-        $stmt = $this->getEntityManager()->getConnection()->prepare($queryString);
-        $stmt->execute($params);
-        $stmt->closeCursor();
+        $conn = $this->getEntityManager()->getConnection();
+        return $conn->executeUpdate($queryString, $params,
+            array_merge(
+                [
+                    'route_names' => Connection::PARAM_STR_ARRAY,
+                ],
+                $types
+            )
+        );
     }
 
     /**
@@ -144,12 +163,12 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
 
         $query .= ' AND ( ';
 
-        if (isset($whereParams['route_name'], $whereParams['entity_id'])) {
-            $query .= ' (su.route_name = :route_name AND su.entity_id = :entity_id) ';
+        if (isset($whereParams['route_names'], $whereParams['entity_id'])) {
+            $query .= ' (su.route_name IN (:route_names) AND su.entity_id = :entity_id) ';
         }
 
         if ($wherePart = $invalidationObject->getWherePart()) {
-            $query .= ' ' . $wherePart  . ' ';
+            $query .= ' ' . $wherePart . ' ';
         }
 
         $query .= ' ) ';

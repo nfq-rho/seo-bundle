@@ -76,14 +76,9 @@ abstract class InvalidationObject implements InvalidationObjectInterface
         return null;
     }
 
-    public function getWhereParams(): array
+    public function getWhereParamTypes(): array
     {
         return [];
-    }
-
-    public function getWherePart(): ?string
-    {
-        return null;
     }
 
     protected function getEntityManager(): EntityManagerInterface
