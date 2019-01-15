@@ -34,6 +34,8 @@ class SegmentBasedNotFoundResolver implements NotFoundResolverInterface
         $failedPath = $request->getPathInfo();
         $failedUrl = $request->getUri();
 
+        $accessibleUrl = null;
+
         do {
             $newPath = substr($failedPath, 0, strrpos($failedPath, '/'));
             $newUrl = $this->getFullUri($request, $newPath);
