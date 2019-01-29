@@ -67,20 +67,13 @@ abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
      */
     protected function executeRemoval(InvalidationObjectInterface $invalidationObject): void
     {
-        $queryString = <<<QUERY
-UPDATE seo_url su 
-  SET su.status = :invalid_status 
-WHERE su.route_name IN (:route_names)
-  AND su.entity_id = :entity_id
-QUERY;
-
         $whereParams = array_merge(
             [
                 'route_names' => $this->getRoutes(),
             ],
             $invalidationObject->getWhereParams(),
             [
-                'invalid_status' => SeoInterface::STATUS_INVALID,
+                'target_status' => SeoInterface::STATUS_INVALID,
             ]
         );
 
@@ -88,7 +81,11 @@ QUERY;
             return $value !== null && $value !== [];
         });
 
-        $this->executeStatement($queryString, $whereParams, $invalidationObject->getWhereParamTypes());
+        $this->executeStatement(
+            $this->getRemovalQueryString($invalidationObject, $whereParams),
+            $whereParams,
+            $invalidationObject->getWhereParamTypes()
+        );
     }
 
     /**
@@ -162,6 +159,37 @@ QUERY;
         }
 
         $query .= ' AND ( ';
+
+        if (isset($whereParams['route_names'], $whereParams['entity_id'])) {
+            $query .= ' (su.route_name IN (:route_names) AND su.entity_id = :entity_id) ';
+        }
+
+        if ($wherePart = $invalidationObject->getWherePart()) {
+            $query .= ' ' . $wherePart . ' ';
+        }
+
+        $query .= ' ) ';
+
+        return $query;
+    }
+
+    /**
+     * Builds removal query based on given invalidation object. The invalidation is executed only
+     * for active urls.
+     */
+    private function getRemovalQueryString(
+        InvalidationObjectInterface $invalidationObject,
+        array $whereParams
+    ): string {
+        $query = 'UPDATE seo_url su';
+
+        if ($joinPart = $invalidationObject->getJoinPart()) {
+            $query .= sprintf(' JOIN %s ', $joinPart);
+        }
+
+        $query .= ' SET su.status = :target_status WHERE';
+
+        $query .= ' ( ';
 
         if (isset($whereParams['route_names'], $whereParams['entity_id'])) {
             $query .= ' (su.route_name IN (:route_names) AND su.entity_id = :entity_id) ';
