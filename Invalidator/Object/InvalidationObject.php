@@ -32,6 +32,9 @@ abstract class InvalidationObject implements InvalidationObjectInterface
     /** @var string|null */
     private $locale;
 
+    /** @var array */
+    protected $changeSet = [];
+
     /**
      * Get an array of attribute names which should cause invalidation when modified.
      *
@@ -99,6 +102,7 @@ abstract class InvalidationObject implements InvalidationObjectInterface
 
         if ($changedAttributes = array_intersect_key($changeSet, $flippedInvalidationAttributes)) {
             $this->hasChanges = true;
+            $this->changeSet = $changeSet;
         }
     }
 }
