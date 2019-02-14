@@ -118,7 +118,7 @@ class SeoRouterBase implements RouterInterface, RequestMatcherInterface
 
     public function isSeoRoute(string $routeName): bool
     {
-        return $this->locator->get(SeoManager::class)->getGeneratorManager()->isRouteRegistered($routeName);
+        return $this->getSeoManager()->getGeneratorManager()->isRouteRegistered($routeName);
     }
 
     public function getRouteCollection(): RouteCollection
@@ -162,10 +162,10 @@ class SeoRouterBase implements RouterInterface, RequestMatcherInterface
                 ]
             );
 
-            $seoEntity = $this->locator->get(SeoManager::class)->getActiveSeoUrl($name, $routeParameters);
+            $seoEntity = $this->getSeoManager()->getActiveSeoUrl($name, $routeParameters);
 
             //If active SEO url was not found, generate a new one and use it instead
-            if (!$seoEntity && false === ($seoEntity = $this->locator->get(SeoManager::class)->createSeoUrl(
+            if (!$seoEntity && false === ($seoEntity = $this->getSeoManager()->createSeoUrl(
                     $name,
                     $routeParameters
                 ))
@@ -302,7 +302,7 @@ class SeoRouterBase implements RouterInterface, RequestMatcherInterface
             $locale = $this->router->getContext()->getParameter('_locale');
         }
 
-        if (null === ($stdUrl = $this->locator->get(SeoManager::class)->getStdUrl($pathInfo, $locale))) {
+        if (null === ($stdUrl = $this->getSeoManager()->getStdUrl($pathInfo, $locale))) {
             return $result;
         }
 
@@ -361,7 +361,7 @@ class SeoRouterBase implements RouterInterface, RequestMatcherInterface
                             : '',
                         $stdUrl->getSeoUrl()
                     ),
-                    'alternates' => $this->locator->get(AlternatesManager::class)->getLangAlternates(
+                    'alternates' => $this->getAlternatesManager()->getSeoUrlLangAlternates(
                         $stdUrl,
                         $routeParams
                     ),
@@ -442,6 +442,16 @@ class SeoRouterBase implements RouterInterface, RequestMatcherInterface
                     : '&' . $queryToAppend
             );
         }
+    }
+
+    private function getAlternatesManager(): AlternatesManager
+    {
+        return $this->locator->get(AlternatesManager::class);
+    }
+
+    private function getSeoManager(): SeoManager
+    {
+        return $this->locator->get(SeoManager::class);
     }
 }
 

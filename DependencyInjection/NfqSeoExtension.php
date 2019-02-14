@@ -54,7 +54,15 @@ class NfqSeoExtension extends Extension
     private function configureSeoPage(ContainerBuilder $container, array $config): void
     {
         $definition = $container->getDefinition($config['service']);
-        $definition->addMethodCall('setTitle', [$config['title'], ['trans' => true]]);
+        $definition->addMethodCall(
+            'setTitle',
+            [
+                $config['title'],
+                array_merge(
+                    ['trans' => true],
+                    $config['title_extras']
+                )
+            ]);
         $definition->addMethodCall('setMetas', [$config['metas']]);
         $definition->addMethodCall('setHeadAttributes', [$config['head']]);
         $definition->addMethodCall('setHtmlAttributes', [$config['head']]);

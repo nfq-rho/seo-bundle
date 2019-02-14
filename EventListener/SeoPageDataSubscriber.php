@@ -11,7 +11,10 @@
 
 namespace Nfq\SeoBundle\EventListener;
 
+use Nfq\SeoBundle\Controller\SeoAwareControllerInterface;
 use Nfq\SeoBundle\Page\SeoPageInterface;
+use Nfq\SeoBundle\Service\AlternatesManager;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
@@ -23,12 +26,17 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class SeoPageDataSubscriber implements EventSubscriberInterface
 {
-    /** @var SeoPageInterface */
-    private $sp;
+    /** @var AlternatesManager */
+    private $alternatesManager;
 
-    public function __construct(SeoPageInterface $sp)
+    /** @var SeoPageInterface */
+    private $seoPage;
+
+
+    public function __construct(AlternatesManager $alternatesManager, SeoPageInterface $seoPage)
     {
-        $this->sp = $sp;
+        $this->alternatesManager = $alternatesManager;
+        $this->seoPage = $seoPage;
     }
 
     public static function getSubscribedEvents(): array
@@ -50,17 +58,21 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $this->setGenericSeoPageData($request);
+        $this->setGenericSeoPageData($request, $controller[0]);
     }
 
-    private function setGenericSeoPageData(Request $request): void
+    private function setGenericSeoPageData(Request $request, AbstractController $controller): void
     {
-        $this->sp->setLocale($request->getLocale());
-        $this->sp->setHost($request->getSchemeAndHttpHost());
-        $this->sp->setSimpleHost('http://' . $request->getHost());
+        $this->seoPage->setLocale($request->getLocale());
+        $this->seoPage->setHost($request->getSchemeAndHttpHost());
+        $this->seoPage->setSimpleHost('http://' . $request->getHost());
 
-        $this->sp->addMeta('property', 'og:url', $this->sp->formatCanonicalUrl($request->getUri()));
-        $this->sp->addMeta('property', 'og:type', 'website');
+        $this->seoPage->addMeta('property', 'og:url', $this->seoPage->formatCanonicalUrl($request->getUri()));
+        $this->seoPage->addMeta('property', 'og:type', 'website');
+
+        if ($controller instanceof SeoAwareControllerInterface) {
+            $this->seoPage->setLangAlternates($this->alternatesManager->getRegularUrlLangAlternates($request));
+        }
 
         if (!$this->isSeoRequest($request)) {
             return;
@@ -69,21 +81,22 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
         $seoData = $this->extractSeoDataFromRequest($request);
 
         if (null === $seoData) {
+            $this->seoPage->setLangAlternates($this->alternatesManager->getRegularUrlLangAlternates($request));
             return;
         }
 
         $fullUri = $this->getFullUrl($seoData['url'], $request->getQueryString());
 
-        $this->sp->setLinkCanonical($fullUri);
+        $this->seoPage->setLinkCanonical($fullUri);
 
         //Overwrite og:url with canonical url
-        $this->sp->addMeta('property', 'og:url', $fullUri);
-        $this->sp->setLangAlternates($seoData['alternates']);
+        $this->seoPage->addMeta('property', 'og:url', $fullUri);
+        $this->seoPage->setLangAlternates($seoData['alternates']);
     }
 
     private function getFullUrl(string $path, ?string $queryString): string
     {
-        return $this->sp->formatCanonicalUrl($path . (!$queryString ? '' : '?' . $queryString));
+        return $this->seoPage->formatCanonicalUrl($path . (!$queryString ? '' : '?' . $queryString));
     }
 
     private function isFileRequest(Request $request): bool

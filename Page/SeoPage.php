@@ -341,7 +341,7 @@ class SeoPage implements SeoPageInterface
 
     private function addLinks(string $type, array $uris): void
     {
-        if (!\array_key_exists($type, $this->links)) {
+        if (\array_key_exists($type, $this->links)) {
             foreach ($uris as $key => $uri) {
                 $this->addLink($type, $uri, $key);
             }

@@ -13,7 +13,9 @@ namespace Nfq\SeoBundle\Service;
 
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Utils\SeoHelper;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
@@ -22,11 +24,16 @@ use Symfony\Component\Routing\RouterInterface;
  */
 class AlternatesManager
 {
+    private const HREF_LANG_DEFAULT_KEY = 'x-default';
+
     /** @var SeoManager */
-    protected $sm;
+    protected $seoManager;
 
     /** @var RouterInterface */
     protected $router;
+
+    /** @var string */
+    protected $defaultLocale;
 
     /** @var string[] */
     protected $locales;
@@ -34,10 +41,11 @@ class AlternatesManager
     /** @var string[] */
     protected $alternateLocaleMapping;
 
-    public function __construct(SeoManager $sm, RouterInterface $router, array $locales)
+    public function __construct(SeoManager $seoManager, RouterInterface $router, string $defaultLocale, array $locales)
     {
-        $this->sm = $sm;
+        $this->seoManager = $seoManager;
         $this->router = $router;
+        $this->defaultLocale = $defaultLocale;
         $this->locales = $locales;
         $this->alternateLocaleMapping = [];
     }
@@ -63,29 +71,71 @@ class AlternatesManager
         $this->alternateLocaleMapping = $alternateLocaleMapping;
     }
 
-    public function getLangAlternates(SeoInterface $entity, array $routeParams): array
+    /**
+     * @return array
+     */
+    public function getRegularUrlLangAlternates(Request $request): array
+    {
+        $locale = $request->getLocale();
+        $routeName = $request->attributes->get('_route');
+
+        $routeCollection = $this->router->getRouteCollection();
+
+        // Try to find out real route name
+        $route = $routeCollection->get($routeName) ?? $routeCollection->get($routeName . '.' . $locale) ?? $routeName;
+
+        if ($route instanceof Route) {
+            $route = $route->hasDefault('_canonical_route')
+                ? $route->getDefault('_canonical_route') . '.' . $locale
+                : $routeName;
+        }
+
+        $routeParams = array_replace($request->attributes->get('_route_params'), ['_locale' => $locale]);
+
+        $result = $this->generateLangAlternates($route, $routeParams, []);
+
+        if (isset($result[$this->defaultLocale])) {
+            $result[self::HREF_LANG_DEFAULT_KEY] = $result[$this->defaultLocale];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Getting alternates is a two-step process:
+     *   1 - get generated urls in all locales
+     *   2 - generate missing urls in specific locale if any
+     *
+     * @param SeoInterface $entity
+     * @param string[] $routeParams
+     * @return string[]
+     */
+    public function getSeoUrlLangAlternates(SeoInterface $entity, array $routeParams): array
     {
         $result = [];
 
-        $currentLocale = $routeParams['_locale'];
-        $currentAlternates = $this->sm->getRepository()->getAlternatesArray(
+        $existingAlternates = $this->seoManager->getRepository()->getAlternatesArray(
             $entity->getRouteName(),
-            $entity->getEntityId(),
-            $currentLocale
+            $entity->getEntityId()
         );
 
-        //Add current locale because it should not be added to alternates
-        $localesWithAlternates = [$currentLocale];
-        foreach ($currentAlternates as $alternate) {
+        $localesWithAlternates = [];
+        foreach ($existingAlternates as $alternate) {
             $altLocale = $this->resolveAlternateUrlLocale($alternate['locale']);
-            $result[$altLocale] = $this->buildAlternateUrl($alternate['seoUrl'], $alternate['locale']);
+            $result[$altLocale] = $this->buildAlternateUrl($alternate['seoUrl']);
             $localesWithAlternates[] = $alternate['locale'];
         }
 
-        return array_merge(
+        $result = array_merge(
             $result,
             $this->generateLangAlternates($entity->getRouteName(), $routeParams, $localesWithAlternates)
         );
+
+        if (isset($result[$this->defaultLocale])) {
+            $result[self::HREF_LANG_DEFAULT_KEY] = $result[$this->defaultLocale];
+        }
+
+        return $result;
     }
 
     protected function buildAlternateUrl(string $seoUrl): string
@@ -105,12 +155,6 @@ class AlternatesManager
             return $alternates;
         }
 
-        //Filter private (prefixed with _) variables
-//        array_walk($params, function (&$value, $key) {
-//            $value = strpos($key, '_') === 0 ? false : $value;
-//        });
-//        $params = array_filter($params);
-
         $backedUpStrategy = $this->router->getMissingUrlStrategy();
         $this->router->setMissingUrlStrategy('empty');
 
@@ -123,7 +167,7 @@ class AlternatesManager
                 UrlGeneratorInterface::ABSOLUTE_URL
             );
 
-            if ($url == '#' || empty($url)) {
+            if ($url === '#' || empty($url)) {
                 continue;
             }
 

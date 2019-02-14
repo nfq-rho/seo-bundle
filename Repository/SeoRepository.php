@@ -51,19 +51,17 @@ class SeoRepository extends ServiceEntityRepository
         return $qb;
     }
 
-    public function getAlternatesArray(string $routeName, int $entityId, string $requestLocale): array
+    public function getAlternatesArray(string $routeName, int $entityId): array
     {
         $qb = $this->getSimpleQueryBuilder();
         $qb->select(['seo.locale', 'seo.seoUrl'])
             ->where('seo.entityId = :entity_id')
             ->andWhere('seo.routeName = :route_name')
             ->andWhere('seo.status = :status')
-            ->andWhere('seo.locale <> :current_locale')
             ->setParameters([
                 'status' => SeoInterface::STATUS_OK,
                 'route_name' => $routeName,
                 'entity_id' => $entityId,
-                'current_locale' => $requestLocale,
             ]);
 
         return $qb->getQuery()->getArrayResult();
