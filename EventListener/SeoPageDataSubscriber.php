@@ -61,7 +61,7 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
         $this->setGenericSeoPageData($request, $controller[0]);
     }
 
-    private function setGenericSeoPageData(Request $request, AbstractController $controller): void
+    private function setGenericSeoPageData(Request $request, $controller): void
     {
         $this->seoPage->setLocale($request->getLocale());
         $this->seoPage->setHost($request->getSchemeAndHttpHost());
