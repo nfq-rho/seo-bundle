@@ -70,11 +70,7 @@ class SeoPageDataSubscriber implements EventSubscriberInterface
         $this->seoPage->addMeta('property', 'og:url', $this->seoPage->formatCanonicalUrl($request->getUri()));
         $this->seoPage->addMeta('property', 'og:type', 'website');
 
-        if ($controller instanceof SeoAwareControllerInterface) {
-            $this->seoPage->setLangAlternates($this->alternatesManager->getRegularUrlLangAlternates($request));
-        }
-
-        if (!$this->isSeoRequest($request)) {
+        if (!($controller instanceof SeoAwareControllerInterface) && !$this->isSeoRequest($request)) {
             return;
         }
 

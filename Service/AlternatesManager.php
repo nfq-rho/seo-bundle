@@ -146,7 +146,7 @@ class AlternatesManager
         return $scheme . '://' . $host . $seoUrl;
     }
 
-    protected function generateLangAlternates(string $routeName, array $params, array $localesWithAlternates): array
+    protected function generateLangAlternates($routeName, array $params, array $localesWithAlternates): array
     {
         $alternates = [];
         $alternatesToGenerate = array_diff($this->locales, $localesWithAlternates);
@@ -159,7 +159,9 @@ class AlternatesManager
         $this->router->setMissingUrlStrategy('empty');
 
         foreach ($alternatesToGenerate as $locale) {
-            $altLocale = $this->resolveAlternateUrlLocale($locale);
+            if (strrpos($routeName, '.')) {
+                $routeName = substr_replace($routeName, $locale, strrpos($routeName, '.') + 1);
+            }
 
             $url = $this->router->generate(
                 $routeName,
@@ -171,6 +173,7 @@ class AlternatesManager
                 continue;
             }
 
+            $altLocale = $this->resolveAlternateUrlLocale($locale);
             $alternates[$altLocale] = $url;
         }
 
@@ -181,7 +184,7 @@ class AlternatesManager
 
     private function resolveAlternateUrlLocale(string $locale): string
     {
-        if (array_key_exists($locale, $this->alternateLocaleMapping)) {
+        if (\array_key_exists($locale, $this->alternateLocaleMapping)) {
             $locale = $this->alternateLocaleMapping[$locale];
         }
 
