@@ -79,6 +79,10 @@ class AlternatesManager
         $locale = $request->getLocale();
         $routeName = $request->attributes->get('_route');
 
+        if (empty($routeName)) {
+            return [];
+        }
+
         $routeCollection = $this->router->getRouteCollection();
 
         // Try to find out real route name
