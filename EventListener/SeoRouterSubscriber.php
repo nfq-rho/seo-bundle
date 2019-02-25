@@ -200,7 +200,7 @@ class SeoRouterSubscriber implements EventSubscriberInterface
 
     private function isFileRequest(Request $request): bool
     {
-        return (bool)preg_match('~\.[a-z0-9]{1,}$~', $request->getRequestUri());
+        return (bool)preg_match('~\.[a-z0-9]{2,3}$~', $request->getRequestUri());
     }
 
     private function isDebugRequest(Request $request): bool
