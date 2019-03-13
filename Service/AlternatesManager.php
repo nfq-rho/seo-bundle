@@ -14,8 +14,8 @@ namespace Nfq\SeoBundle\Service;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Utils\SeoHelper;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
@@ -83,20 +83,16 @@ class AlternatesManager
             return [];
         }
 
-        $routeCollection = $this->router->getRouteCollection();
+        $routeParams = $request->attributes->get('_route_params');
+        $routeParams['_locale'] = $locale;
 
-        // Try to find out real route name
-        $route = $routeCollection->get($routeName) ?? $routeCollection->get($routeName . '.' . $locale) ?? $routeName;
+        $routeName = $this->resolveValidRouteName($routeName, $locale, $routeParams);
 
-        if ($route instanceof Route) {
-            $route = $route->hasDefault('_canonical_route')
-                ? $route->getDefault('_canonical_route') . '.' . $locale
-                : $routeName;
+        if (empty($routeName)) {
+            return [];
         }
 
-        $routeParams = array_replace($request->attributes->get('_route_params'), ['_locale' => $locale]);
-
-        $result = $this->generateLangAlternates($route, $routeParams, []);
+        $result = $this->generateLangAlternates($routeName, $routeParams, []);
 
         if (isset($result[$this->defaultLocale])) {
             $result[self::HREF_LANG_DEFAULT_KEY] = $result[$this->defaultLocale];
@@ -167,9 +163,11 @@ class AlternatesManager
                 $routeName = substr_replace($routeName, $locale, strrpos($routeName, '.') + 1);
             }
 
+            $params['_locale'] = $locale;
+
             $url = $this->router->generate(
                 $routeName,
-                array_merge($params, ['_locale' => $locale]),
+                $params,
                 UrlGeneratorInterface::ABSOLUTE_URL
             );
 
@@ -193,5 +191,28 @@ class AlternatesManager
         }
 
         return SeoHelper::formatAlternateLocale($locale);
+    }
+
+    protected function resolveValidRouteName(string &$routeName, string $locale, array $routeParams): ?string
+    {
+        $routeNameVariants = [
+            $routeName . '.' . $locale,
+            $routeName,
+        ];
+
+        foreach ($routeNameVariants as $routeNameVariant) {
+            try {
+                $this->router->generate(
+                    $routeNameVariant,
+                    $routeParams,
+                    UrlGeneratorInterface::ABSOLUTE_URL
+                );
+
+                return $routeNameVariant;
+            } catch (ResourceNotFoundException $exception) {
+            }
+        }
+
+        return null;
     }
 }
