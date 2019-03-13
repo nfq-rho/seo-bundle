@@ -226,7 +226,7 @@ class SeoPage implements SeoPageInterface
         return $this;
     }
 
-    public function setLinkNextPage($link): SeoPageInterface
+    public function setLinkNextPage(string $link): SeoPageInterface
     {
         $this->setLink(self::SEO_REL_NEXT, $link);
         return $this;
