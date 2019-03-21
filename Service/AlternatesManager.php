@@ -15,6 +15,7 @@ use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Utils\SeoHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -209,7 +210,7 @@ class AlternatesManager
                 );
 
                 return $routeNameVariant;
-            } catch (ResourceNotFoundException $exception) {
+            } catch (RouteNotFoundException | ResourceNotFoundException $exception) {
             }
         }
 
