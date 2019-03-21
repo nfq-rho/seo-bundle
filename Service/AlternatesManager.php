@@ -194,19 +194,21 @@ class AlternatesManager
         return SeoHelper::formatAlternateLocale($locale);
     }
 
-    protected function resolveValidRouteName(string &$routeName, string $locale, array $routeParams): ?string
+    protected function resolveValidRouteName(string $routeName, string $locale, array $routeParams): ?string
     {
         $routeNameVariants = [
             $routeName . '.' . $locale,
             $routeName,
         ];
 
+        unset($routeParams['_locale']);
+
         foreach ($routeNameVariants as $routeNameVariant) {
             try {
                 $this->router->generate(
                     $routeNameVariant,
                     $routeParams,
-                    UrlGeneratorInterface::ABSOLUTE_URL
+                    UrlGeneratorInterface::ABSOLUTE_PATH
                 );
 
                 return $routeNameVariant;
