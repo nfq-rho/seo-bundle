@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -11,42 +12,33 @@
 namespace Nfq\SeoBundle\Traits;
 
 use Nfq\SeoBundle\Utils\SeoHelper;
-use Stash\Interfaces\PoolInterface;
+use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\Cache\Adapter\ChainAdapter;
 
 /**
- * Class SeoCache
+ * Trait SeoCache
  * @package Nfq\SeoBundle\Traits
  */
 trait SeoCache
 {
-    /**
-     * @var PoolInterface
-     */
-    private $cache;
+    /** @var CacheItemPoolInterface */
+    private $pool;
 
-    /**
-     * Check if cache can be used
-     *
-     * @return bool
-     */
-    public function canCache()
+    public function canCache(): bool
     {
-        return (!SeoHelper::isCli() && $this->cache);
+        return (!SeoHelper::isCli() && null !== $this->pool);
     }
 
     /**
-     * @param PoolInterface $cachePool
+     * @param CacheItemPoolInterface[] $adapters
      */
-    public function setCache(PoolInterface $cachePool)
+    public function setPool(array $adapters): void
     {
-        $this->cache = $cachePool;
+        $this->pool = new ChainAdapter($adapters);
     }
 
-    /**
-     * @return PoolInterface
-     */
-    public function getCache()
+    public function getCache(): CacheItemPoolInterface
     {
-        return $this->cache;
+        return $this->pool;
     }
 }

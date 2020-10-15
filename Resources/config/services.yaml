@@ -1,0 +1,32 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+        bind:
+            $debug: '%kernel.debug%'
+            $defaultLocale: '%nfq_seo.default_locale%'
+            $locales: '%locales%'
+
+    nfq_seo.page: '@Nfq\SeoBundle\Page\SeoPage'
+
+    Nfq\SeoBundle\:
+        resource: '../../*'
+        exclude: '../../{DependencyInjection,Entity,Exception,Model,Tests,Utils,NfqSeoBundle.php}'
+
+    Nfq\SeoBundle\Controller\:
+        resource: '../../Controller'
+        tags: ['controller.service_arguments']
+
+    Nfq\SeoBundle\EventListener\SeoInvalidateSubscriber:
+        tags:
+            - { name: doctrine.event_subscriber }
+
+    Nfq\SeoBundle\Routing\SegmentBasedNotFoundResolver: ~
+    Nfq\SeoBundle\Routing\NotFoundResolverInterface: '@Nfq\SeoBundle\Routing\SegmentBasedNotFoundResolver'
+
+    Nfq\SeoBundle\Routing\SeoRouter:
+        decorates: 'router.default'
+        arguments:
+            $router: '@Nfq\SeoBundle\Routing\SeoRouter.inner'

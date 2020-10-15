@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,9 +11,9 @@
 
 namespace Nfq\SeoBundle\Controller;
 
+use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\FlattenException;
 use Symfony\Component\HttpKernel\Log\DebugLoggerInterface;
 
 /**
@@ -23,16 +24,14 @@ use Symfony\Component\HttpKernel\Log\DebugLoggerInterface;
  */
 class ExceptionController extends \Symfony\Bundle\TwigBundle\Controller\ExceptionController
 {
-    /**
-     * @param Request $request
-     * @param FlattenException $exception
-     * @param DebugLoggerInterface $logger
-     * @return Response|void
-     */
-    public function seoShowAction(Request $request, $exception, DebugLoggerInterface $logger = null)
-    {
+    public function seoShowAction(
+        Request $request,
+        \Exception $exception,
+        DebugLoggerInterface $logger = null
+    ): Response {
         $response = parent::showAction($request, FlattenException::create($exception), $logger);
         $response->setStatusCode(404);
+
         return $response;
     }
 }

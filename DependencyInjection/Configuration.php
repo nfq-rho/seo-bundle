@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,26 +11,38 @@
 
 namespace Nfq\SeoBundle\DependencyInjection;
 
+use Nfq\SeoBundle\Page\SeoPage;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 /**
- * This is the class that validates and merges configuration from your app/config files
- *
- * To learn more see {@link http://symfony.com/doc/current/cookbook/bundles/extension.html#cookbook-bundles-extension-config-class}
+ * Class Configuration
+ * @package Nfq\SeoBundle\DependencyInjection
  */
 class Configuration implements ConfigurationInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getConfigTreeBuilder()
+    public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('nfq_seo');
+        $treeBuilder = new TreeBuilder('nfq_seo');
+        $rootNode = method_exists($treeBuilder, 'getRootNode')
+            ? $treeBuilder->getRootNode()
+            : $treeBuilder->root('nfq_seo');
 
         $rootNode
             ->children()
+                ->arrayNode('cache')
+                    ->children()
+                        ->integerNode('ttl')
+                            ->treatNullLike(3600)
+                            ->defaultValue(3600)
+                        ->end()
+                        ->arrayNode('adapters')
+                            ->treatNullLike([])
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->scalarNode('resolve_404_pages')->defaultFalse()->end()
                 ->scalarNode('default_locale')->end()
                 ->arrayNode('alternate_url_locale_mapping')
                     ->useAttributeAsKey('id')
@@ -49,21 +62,22 @@ class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
                         ->scalarNode('encoding')->defaultValue('UTF-8')->end()
-                        ->scalarNode('default')->defaultValue('nfq_seo.page.default')->end()
+                        ->scalarNode('service')->defaultValue(SeoPage::class)->end()
                         ->scalarNode('title')->defaultValue('nfq_seo.default_title')->end()
+                        ->arrayNode('title_extras')
+                            ->treatNullLike([])
+                            ->prototype('variable')->end()
+                        ->end()
                         ->arrayNode('metas')
                             ->useAttributeAsKey('id')
                             ->prototype('array')
-                                ->useAttributeAsKey('id')
                                 ->prototype('variable')->end()
                             ->end()
                         ->end()
                         ->arrayNode('html')
-                            ->useAttributeAsKey('id')
                             ->prototype('variable')->end()
                         ->end()
                         ->arrayNode('head')
-                            ->useAttributeAsKey('id')
                             ->prototype('variable')->end()
                         ->end()
                     ->end()

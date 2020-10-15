@@ -9,11 +9,15 @@
  * file that was distributed with this source code.
  */
 
-namespace Nfq\SeoBundle\Utils;
+namespace Nfq\SeoBundle\Routing;
 
-use Behat\Transliterator\Transliterator;
+use Symfony\Component\HttpFoundation\Request;
 
-class Urlizer extends Transliterator
+/**
+ * Interface NotFoundResolverInterface
+ * @package Nfq\SeoBundle\Routing
+ */
+interface NotFoundResolverInterface
 {
-
+    public function resolve(Request $request): ?string;
 }

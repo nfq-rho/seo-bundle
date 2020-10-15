@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -11,6 +12,7 @@
 namespace Nfq\SeoBundle\Utils;
 
 use Nfq\SeoBundle\Model\SeoSlug;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Class SeoHelper
@@ -18,12 +20,43 @@ use Nfq\SeoBundle\Model\SeoSlug;
  */
 class SeoHelper
 {
-    /**
-     * @param string $uri
-     * @param array $params
-     * @return string
-     */
-    public static function getUri($uri, $params)
+    public static function getAccessibleUrl(string $uri): ?string
+    {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'HEAD',
+                'follow_location' => 0,
+                'protocol_version' => 1.1,
+                'header' => [
+                    'Connection: close',
+                ],
+            ]
+        ]);
+
+        $headers = @get_headers($uri, 1, $context);
+
+        if (!$headers || !preg_match('#HTTP/\d+\.\d+ (?P<response_code>\d+)#', $headers[0], $matches)) {
+            return null;
+        }
+
+        if (!\in_array(
+            (int)$matches['response_code'],
+            [
+                Response::HTTP_OK,
+                Response::HTTP_MOVED_PERMANENTLY,
+                Response::HTTP_FOUND,
+                Response::HTTP_TEMPORARY_REDIRECT,
+                Response::HTTP_PERMANENTLY_REDIRECT,
+            ],
+            true
+        )) {
+            return null;
+        }
+
+        return $headers['Location'] ?? $uri;
+    }
+
+    public static function getUri(string $uri, ?array $params): string
     {
         if (isset($params) === true && !empty($params)) {
             $uri .= '?' . http_build_query($params, '', '&');
@@ -32,32 +65,23 @@ class SeoHelper
         return $uri;
     }
 
-    /**
-     * @param string $queryString
-     * @return array
-     */
-    public static function parseQueryString($queryString)
+    public static function parseQueryString(string $queryString): array
     {
         parse_str(html_entity_decode($queryString), $parsed);
 
         return $parsed;
     }
-    
+
     /**
      * @param array|string $data
-     * @return string
      */
-    public static function generateHash($data)
+    public static function generateHash($data): string
     {
-        $data = is_array($data) ? json_encode($data) : $data;
+        $data = \is_array($data) ? json_encode($data) : $data;
         return sprintf('%u', crc32(mb_strtolower($data, 'UTF-8')));
     }
 
-    /**
-     * @param array $hashData
-     * @return string
-     */
-    public static function buildStdUrl(array $hashData)
+    public static function buildStdUrl(array $hashData): string
     {
         $stdPath = $hashData['path'];
         unset($hashData['path']);
@@ -66,13 +90,7 @@ class SeoHelper
         return $stdPath . (!empty($query) ? '?' . $query : '');
     }
 
-    /**
-     * @param SeoSlug $seoSlug
-     * @param string $pathSep
-     * @param string $slugSep
-     * @return string
-     */
-    public static function glueUrl(SeoSlug $seoSlug, $pathSep, $slugSep)
+    public static function glueUrl(SeoSlug $seoSlug, string $pathSep, string $slugSep): string
     {
         $params = $seoSlug->getRouteParts();
 
@@ -82,11 +100,11 @@ class SeoHelper
         array_walk(
             $params,
             function (&$item) use ($slugSep, $needTransliteration) {
-                if (is_array($item)) {
+                if (\is_array($item)) {
                     $item = implode($slugSep, $item);
                 }
 
-                $item = mb_strtolower(trim($item), 'UTF-8');
+                $item = mb_strtolower(trim((string)$item), 'UTF-8');
 
                 $item = $needTransliteration
                     ? self::transliterate($item, $slugSep)
@@ -97,76 +115,45 @@ class SeoHelper
         return self::cleanUri($seoSlug->getPrefix() . $pathSep . implode($pathSep, $params), $pathSep);
     }
 
-    /**
-     * @param string $uri
-     * @param string $pathSep
-     * @return string
-     */
-    public static function cleanUri($uri, $pathSep)
+    public static function cleanUri(string $uri, string $pathSep): string
     {
         return preg_replace('~' . $pathSep . '+~', $pathSep, $uri);
     }
 
-    /**
-     * @param SeoSlug $seoSlug
-     * @return bool
-     */
-    public static function needTransliteration(SeoSlug $seoSlug)
+    public static function needTransliteration(SeoSlug $seoSlug): bool
     {
         $transliterationLangs = ['ru'];
         $seoLang = strtolower(self::getLangFromLocale($seoSlug->getLocale()));
 
-        return (in_array($seoLang, $transliterationLangs));
+        return \in_array($seoLang, $transliterationLangs, true);
     }
 
-    /**
-     * @param string $url
-     * @param string $slugSep
-     * @return string
-     */
-    public static function transliterate($url, $slugSep)
+    public static function transliterate(string $url, string $slugSep): string
     {
         return Urlizer::transliterate($url, $slugSep);
     }
 
-    /**
-     * @param string $url
-     * @param string $slugSep
-     * @return string
-     */
-    public static function urlize($url, $slugSep)
+    public static function urlize(string $url, string $slugSep): string
     {
         return Urlizer::urlize($url, $slugSep);
     }
 
-    /**
-     * @param string $locale
-     * @param bool $fallbackLocale
-     * @return string
-     */
-    public static function getLangFromLocale($locale, $fallbackLocale = false)
+    public static function getLangFromLocale(string $locale, string $fallbackLocale = null): string
     {
         if (empty($locale) && $fallbackLocale) {
             $locale = $fallbackLocale;
         }
-        
-        list($lang,) = explode('_', $locale);
+
+        [$lang,] = explode('_', $locale);
         return $lang;
     }
 
-    /**
-     * @param string $locale
-     * @return string
-     */
-    public static function formatAlternateLocale($locale)
+    public static function formatAlternateLocale(string $locale): string
     {
         return str_replace('_', '-', strtolower($locale));
     }
 
-    /**
-     * @return bool
-     */
-    public static function isCli()
+    public static function isCli(): bool
     {
         return PHP_SAPI === 'cli';
     }

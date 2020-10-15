@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -19,33 +20,11 @@ use Nfq\SeoBundle\Model\SeoSlugInterface;
  */
 interface SeoGeneratorInterface
 {
-    /**
-     * Get entity manager.
-     *
-     * @return EntityManagerInterface
-     */
-    public function getEntityManager();
+    public function getEntityManager(): EntityManagerInterface;
 
-    /**
-     * Set entity manager.
-     *
-     * @param EntityManagerInterface $em
-     * @return $this
-     */
-    public function setEntityManager(EntityManagerInterface $em);
+    public function setCurrentRouteName(string $routeName): SeoGeneratorInterface;
 
-    /**
-     * Adds route available route
-     *
-     * @param string $routeName
-     * @return $this
-     */
-    public function setCurrentRouteName($routeName);
-
-    /**
-     * @return string
-     */
-    public function getCurrentRouteName();
+    public function getCurrentRouteName(): string;
 
     /**
      * Generates SEO url.
@@ -62,7 +41,7 @@ interface SeoGeneratorInterface
      * @param array $uriParams
      * @return array
      */
-    public function getHashParams(array $uriParams);
+    public function getHashParams(array $uriParams): array;
 
     /**
      * Specify which query parameters can be used to distinguish URI from others, to make it some how unique that is.
@@ -74,5 +53,5 @@ interface SeoGeneratorInterface
      *
      * @return array
      */
-    public function getAllowedQueryParams();
+    public function getAllowedQueryParams(): array;
 }

@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -16,149 +17,99 @@ namespace Nfq\SeoBundle\Model;
  */
 class SeoSlug implements SeoSlugInterface
 {
-    /**
-     * @var string
-     */
+    /** @var int */
     private $entityId;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $prefix;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $locale;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $routeName;
 
-    /**
-     * @var array
-     */
-    private $routeParts;
+    /** @var string[] */
+    private $routeParts = [];
 
-    /**
-     * @var array
-     */
-    private $routeQueryParts;
+    /** @var string[] */
+    private $routeQueryParts = [];
 
-    /**
-     * @inheritdoc
-     */
-    public function setPrefix($prefix)
+    public function setPrefix(string $prefix): SeoSlugInterface
     {
         $this->prefix = $prefix;
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getPrefix()
+    public function getPrefix(): string
     {
         return $this->prefix;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setEntityId($entityId = null)
+    public function setEntityId(int $entityId = null): SeoSlugInterface
     {
-        if (is_null($entityId)) {
+        if (null === $entityId) {
             $entityId = $this->generateEntityId();
         }
 
-        $this->entityId = (string)$entityId;
+        $this->entityId = $entityId;
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getEntityId()
+    public function getEntityId(): int
     {
-        return (string)$this->entityId;
+        return $this->entityId;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setLocale($locale)
+    public function setLocale(string $locale): SeoSlugInterface
     {
         $this->locale = $locale;
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getLocale()
+    public function getLocale(): string
     {
         return $this->locale;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getRouteName()
+    public function getRouteName(): string
     {
         return $this->routeName;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setRouteName($routeName)
+    public function setRouteName(string $routeName): SeoSlugInterface
     {
         $this->routeName = $routeName;
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setRouteParts(array $parts)
+    public function setRouteParts(array $parts): SeoSlugInterface
     {
         $this->routeParts = $parts;
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getRouteParts()
+    public function getRouteParts(): array
     {
-        return (array)$this->routeParts;
+        return $this->routeParts;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setQueryParts(array $parts)
+    public function setQueryParts(array $parts): SeoSlugInterface
     {
         $this->routeQueryParts = $parts;
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getQueryParts()
+    public function getQueryParts(): array
     {
-        return (array)$this->routeQueryParts;
+        return $this->routeQueryParts;
     }
 
     /**
      * Generate custom entity ID if slug is not related to any real entity
-     *
-     * @return string
      */
-    private function generateEntityId()
+    private function generateEntityId(): int
     {
-        return sprintf('%u', crc32(json_encode($this->routeQueryParts)));
+        return (int)sprintf('%u', crc32(json_encode($this->routeQueryParts)));
     }
 }

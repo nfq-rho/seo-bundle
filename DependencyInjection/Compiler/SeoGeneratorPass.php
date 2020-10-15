@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,32 +11,37 @@
 
 namespace Nfq\SeoBundle\DependencyInjection\Compiler;
 
+use Nfq\SeoBundle\Generator\SeoGeneratorManager;
+use Nfq\SeoBundle\Routing\SeoRouter;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Class SeoGeneratorsCompilerPass
+ * Class SeoGeneratorPass
  * @package Nfq\SeoBundle\DependencyInjection\Compiler
  */
-class SeoGeneratorsCompilerPass implements CompilerPassInterface
+class SeoGeneratorPass implements CompilerPassInterface
 {
-    /**
-     * @param ContainerBuilder $container
-     */
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasDefinition('nfq_seo.router')) {
+        if (!$container->hasDefinition(SeoRouter::class)) {
             return;
         }
 
-        $definition = $container->getDefinition('nfq_seo.url_generator_manager');
-        foreach ($container->findTaggedServiceIds('seo.generator') as $id => $attributes) {
+        $definition = $container->getDefinition(SeoGeneratorManager::class);
+        foreach ($container->findTaggedServiceIds('nfq_seo.generator') as $id => $attributes) {
             foreach ($attributes as $attribute) {
                 $generatorDef = $container->getDefinition($id);
                 $generatorDef->setLazy(true);
 
-                $definition->addMethodCall('addGenerator', [new Reference($id), $attribute['route_name']]);
+                $definition->addMethodCall(
+                    'addGenerator',
+                    [
+                        new Reference($id),
+                        $attribute['route_name']
+                    ]
+                );
             }
         }
     }

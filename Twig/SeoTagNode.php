@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,15 +11,17 @@
 
 namespace Nfq\SeoBundle\Twig;
 
+use Nfq\SeoBundle\Twig\Extension\SeoExtension;
+
 /**
  * Class SeoTagNode
  * @package Nfq\SeoBundle\Twig
  */
 class SeoTagNode extends \Twig_Node
 {
-    public function compile(\Twig_Compiler $compiler)
+    public function compile(\Twig_Compiler $compiler): void
     {
-        $count = count($this->getNode('seo_node'));
+        $count = \count($this->getNode('seo_node'));
 
         $compiler
             ->addDebugInfo($this);
@@ -42,9 +45,9 @@ class SeoTagNode extends \Twig_Node
 
         $compiler
             //Set seo method
-            ->raw('$sM = ')->string('get')->raw(' . ucfirst($sT[1]);')->raw(PHP_EOL)
+            ->raw('$sM = ')->string('get')->raw('.ucfirst($sT[1]);')->raw(PHP_EOL)
             //Set seo block
-            ->raw('$sB = ')->raw('$sT[1];')->raw(PHP_EOL)
+            ->raw('$sB = ')->raw('"seo".$sT[1];')->raw(PHP_EOL)
             //[1] holds tag name, we don't need that no more, so unsetting
             ->raw('unset($sT[1]);')->raw(PHP_EOL)
             //Try to render the block, and use that content instead of tag
@@ -52,7 +55,7 @@ class SeoTagNode extends \Twig_Node
             ->raw('ob_start();')->raw(PHP_EOL)
             ->raw('$this->displayBlock($sB, $context, $blocks);')->raw(PHP_EOL)
             ->raw('$blockContent = ob_get_clean();')->raw(PHP_EOL)
-            ->raw('$sE = $this->env->getExtension(')->string('nfq_seo')->raw(');')->raw(PHP_EOL)
+            ->raw('$sE = $this->env->getExtension(')->string(SeoExtension::class)->raw(');')->raw(PHP_EOL)
             ->raw('if (empty($blockContent)) {')->raw(PHP_EOL)
             //[2] Holds predefined meta tags. Loop predefined blocks and render the content for them
             //This allows to override <meta name="foo" with {%block meta_foo %}

@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -17,38 +18,31 @@ namespace Nfq\SeoBundle\Invalidator\Object;
 interface InvalidationObjectInterface
 {
     /**
-     * Where part by default has following query "su.route_name = :route_name AND su.locale = :locale"
-     * @return string
+     * Where part by default has following query "su.route_names IN (:route_names) AND su.locale = :locale"
      */
-    public function getWherePart();
+    public function getWherePart(): ?string;
+
+    public function getJoinPart(): ?string;
 
     /**
-     * @return string
+     * @return string[]
      */
-    public function getJoinPart();
+    public function getWhereParams(): array;
 
     /**
-     * @return array
+     * Specify custom param types. For example if parameter holds an array, it's type has to be specified
+     * @return string[]
      */
-    public function getWhereParams();
+    public function getWhereParamTypes(): array;
 
     /**
      * @return object
      */
     public function getEntity();
 
-    /**
-     * @return string
-     */
-    public function getLocale();
+    public function getLocale(): ?string;
 
-    /**
-     * @return boolean
-     */
-    public function hasChanges();
+    public function hasChanges(): bool;
 
-    /**
-     * @return int
-     */
-    public function getInvalidationStatus();
+    public function getInvalidationStatus(): int;
 }

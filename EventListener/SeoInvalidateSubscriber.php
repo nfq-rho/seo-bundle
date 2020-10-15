@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -21,101 +22,77 @@ use Nfq\SeoBundle\Invalidator\SeoInvalidatorManager;
  */
 class SeoInvalidateSubscriber implements EventSubscriber
 {
-    /**
-     * @var SeoInvalidatorManager
-     */
+    /** @var SeoInvalidatorManager */
     private $invalidatorManager;
 
-    /**
-     * @param SeoInvalidatorManager $si
-     */
     public function __construct(SeoInvalidatorManager $invalidatorManager)
     {
         $this->invalidatorManager = $invalidatorManager;
     }
 
-    /**
-     * @return array
-     */
-    public function getSubscribedEvents()
+    public function getSubscribedEvents(): array
     {
         return [
-            'postPersist',
+            'prePersist',
             'postUpdate',
             'preRemove',
         ];
     }
 
-    /**
-     * @param LifecycleEventArgs $event
-     */
-    public function postPersist(LifecycleEventArgs $event)
+    public function prePersist(LifecycleEventArgs $event): void
     {
-        $this->invalidate($event);
+        $this->invalidate($event, __METHOD__);
     }
 
-    /**
-     * @param LifecycleEventArgs $event
-     */
-    public function postUpdate(LifecycleEventArgs $event)
+    public function postUpdate(LifecycleEventArgs $event): void
     {
-        $this->invalidate($event);
+        $this->invalidate($event, __METHOD__);
     }
 
-    /**
-     * @param LifecycleEventArgs $event
-     */
-    public function preRemove(LifecycleEventArgs $event)
+    public function preRemove(LifecycleEventArgs $event): void
     {
-        $this->remove($event);
+        $this->remove($event, __METHOD__);
     }
 
-    /**
-     * @param LifecycleEventArgs $event
-     */
-    private function remove(LifecycleEventArgs $event)
+    private function remove(LifecycleEventArgs $event, string $eventName): void
     {
         $entity = $event->getEntity();
 
         try {
-            $invalidator = $this->getInvalidator($entity);
+            $invalidator = $this->getInvalidator($entity, $eventName);
 
-            $invalidator
-                ->setEntityManager($event->getEntityManager())
-                ->remove($entity);
+            $invalidator->remove($entity);
         } catch (\InvalidArgumentException $ex) {
             //Invalidator was not found, so just continue
         }
     }
-    
-    /**
-     * @param $event
-     */
-    private function invalidate(LifecycleEventArgs $event)
+
+    private function invalidate(LifecycleEventArgs $event, string $eventName): void
     {
         $entity = $event->getEntity();
 
         try {
-            $invalidator = $this->getInvalidator($entity);
+            $invalidator = $this->getInvalidator($entity, $eventName);
 
             $uow = $event->getEntityManager()->getUnitOfWork();
 
-            $invalidator
-                ->setEntityManager($event->getEntityManager())
-                ->invalidate($entity, $uow->getEntityChangeSet($entity));
+            $changeSet = $uow->getEntityChangeSet($entity);
+            // If changeset is empty set it to null
+            if (empty($changeSet)) {
+                $changeSet = null;
+            }
+
+            $invalidator->invalidate($entity, $changeSet);
         } catch (\InvalidArgumentException $ex) {
             //Invalidator was not found, so just continue
         }
     }
 
-    /**
-     * @param $entity
-     * @return SeoInvalidatorInterface
-     */
-    private function getInvalidator($entity)
+    private function getInvalidator($entity, string $eventName): SeoInvalidatorInterface
     {
-        $entityClass = get_class($entity);
-
-        return $this->invalidatorManager->getInvalidator($entityClass);
+        return $this->invalidatorManager->getInvalidator(
+            \get_class($entity),
+            substr($eventName, strrpos($eventName, ':') + 1)
+        );
     }
 }

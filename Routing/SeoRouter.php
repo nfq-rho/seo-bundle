@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,63 +11,51 @@
 
 namespace Nfq\SeoBundle\Routing;
 
+use Nfq\SeoBundle\Controller\ExceptionController;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Service\AlternatesManager;
 use Nfq\SeoBundle\Service\SeoManager;
 use Nfq\SeoBundle\Traits\SeoConfig;
 use Nfq\SeoBundle\Utils\SeoHelper;
 use Nfq\SeoBundle\Utils\SeoUtils;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
 use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
- * Class SeoRouter
+ * Class SeoRouterBase
  * @package Nfq\SeoBundle\Routing
  */
-class SeoRouter implements RouterInterface, RequestMatcherInterface
+class SeoRouterBase implements RouterInterface, RequestMatcherInterface
 {
+    private const FORCE_SEO_MATCHER_FLAG = '_force_seo_matcher';
+    public const SEO_EXCEPTION_CONTROLLER = ExceptionController::class . '::seoShowAction';
+
     use SeoConfig;
 
-    /**
-     * @var AlternatesManager
-     */
-    private $am;
+    /** @var ContainerInterface */
+    private $locator;
 
-    /**
-     * @var SeoManager
-     */
-    private $sm;
-
-    /**
-     * @var RouterInterface|RequestMatcherInterface
-     */
+    /** @var RouterInterface|RequestMatcherInterface */
     private $router;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $currentLocale;
 
-    /**
-     * @var RequestContext
-     */
+    /** @var RequestContext */
     private $backedUpContext;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $defaultLocale;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $debug;
 
     /**
@@ -76,56 +65,79 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
      */
     private $lastGeneratedSeoEntity = false;
 
-    /**
-     * Constructor
-     *
-     * @param RouterInterface $router
-     * @param bool $debug
-     */
-    public function __construct(RouterInterface $router, $debug)
+    public function __construct(ContainerInterface $locator, RouterInterface $router, bool $debug)
     {
+        $this->locator = $locator;
         $this->router = $router;
+
         $this->debug = $debug;
     }
 
-    /**
-     * @param SeoManager $sm
-     */
-    public function setSeoManager($sm)
+    public static function getSubscribedServices(): array
     {
-        $this->sm = $sm;
+        return [
+            SeoManager::class,
+            AlternatesManager::class,
+        ];
     }
 
-    /**
-     * @param AlternatesManager $am
-     */
-    public function setAlternatesManager($am)
-    {
-        $this->am = $am;
-    }
-
-    /**
-     * @param string $defaultLocale
-     */
-    public function setDefaultLocale($defaultLocale)
+    public function setDefaultLocale(string $defaultLocale): void
     {
         $this->defaultLocale = $defaultLocale;
     }
 
-    /**
-     * @return SeoInterface|bool
-     */
-    public function getLastGeneratedSeoEntity()
+    public function match($pathInfo): array
     {
-        return $this->lastGeneratedSeoEntity;
+        try {
+            $match = $this->router->match($pathInfo);
+
+            if (isset($match[self::FORCE_SEO_MATCHER_FLAG])) {
+                $match = $this->matchStdUrl($pathInfo);
+            }
+        } catch (ResourceNotFoundException $ex) {
+            $match = $this->matchStdUrl($pathInfo);
+        }
+
+        return $match;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate($name, $parameters = [], $absolute = UrlGeneratorInterface::ABSOLUTE_PATH)
+    public function matchRequest(Request $request): array
     {
-        $seoUrl = null;
+        try {
+            $match = $this->router->matchRequest($request);
+
+            if (isset($match[self::FORCE_SEO_MATCHER_FLAG])) {
+                $match = $this->matchStdUrl($request);
+            }
+        } catch (ResourceNotFoundException $ex) {
+            $match = $this->matchStdUrl($request);
+        }
+
+        return $match;
+    }
+
+    public function isSeoRoute(string $routeName): bool
+    {
+        return $this->getSeoManager()->getGeneratorManager()->isRouteRegistered($routeName);
+    }
+
+    public function getRouteCollection(): RouteCollection
+    {
+        return $this->router->getRouteCollection();
+    }
+
+    public function setContext(RequestContext $context): void
+    {
+        $this->router->setContext($context);
+    }
+
+    public function getContext(): RequestContext
+    {
+        return $this->router->getContext();
+    }
+
+    public function generate($name, $parameters = [], $absolute = self::ABSOLUTE_PATH): string
+    {
         $stdUrlParsed = [];
 
         try {
@@ -147,14 +159,16 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
                 $parameters,
                 [
                     'path' => $stdUrlParsed['path'],
-                    '_std_query' => isset($stdUrlParsed['query']) ? $stdUrlParsed['query'] : '',
                 ]
             );
 
-            $seoEntity = $this->sm->getActiveSeoUrl($name, $routeParameters);
+            $seoEntity = $this->getSeoManager()->getActiveSeoUrl($name, $routeParameters);
 
             //If active SEO url was not found, generate a new one and use it instead
-            if (!$seoEntity && false === ($seoEntity = $this->sm->createSeoUrl($name, $routeParameters))
+            if (!$seoEntity && false === ($seoEntity = $this->getSeoManager()->createSeoUrl(
+                    $name,
+                    $routeParameters
+                ))
             ) {
                 throw new RouteNotFoundException();
             }
@@ -180,10 +194,12 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
                 $seoUrl = SeoHelper::getUri($seoUrl, $newStdUrlParams);
             }
 
-            if ($absolute === UrlGeneratorInterface::ABSOLUTE_URL || $absolute === UrlGeneratorInterface::NETWORK_PATH) {
-                $seoUrl = sprintf('%s://%s%s',
-                    isset($stdUrlParsed['scheme']) ? $stdUrlParsed['scheme'] : $this->getContext()->getScheme(),
-                    isset($stdUrlParsed['host']) ? $stdUrlParsed['host'] : $this->getContext()->getHost(),
+            if ($absolute === self::ABSOLUTE_URL || $absolute === self::NETWORK_PATH) {
+                $seoUrl = sprintf(
+                    '%s://%s%s%s',
+                    $stdUrlParsed['scheme'] ?? $this->getContext()->getScheme(),
+                    $stdUrlParsed['host'] ?? $this->getContext()->getHost(),
+                    isset($stdUrlParsed['port']) && $stdUrlParsed['port'] !== 80 ? ':' . $stdUrlParsed['port'] : '',
                     $seoUrl
                 );
             }
@@ -193,31 +209,42 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
                 throw $ex;
             }
 
-            $seoUrl = $this->applyMissingUrlStrategy($parameters, $stdUrlParsed);
+            if (null === $seoUrl = $this->applyMissingUrlStrategy($parameters, $stdUrlParsed)) {
+                $seoUrl = $stdUrl;
+            }
         }
 
         return $seoUrl;
     }
 
     /**
-     * @param array $routeParams
-     * @param array $parsedStdParams
-     * @return string
+     * @param string[] $routeParams
+     * @param string[] $stdUrlParsed
      */
-    private function applyMissingUrlStrategy($routeParams, $parsedStdParams)
+    private function applyMissingUrlStrategy(array $routeParams, array $stdUrlParsed): ?string
     {
-        $result = '';
+        $result = null;
 
         switch ($this->getMissingUrlStrategy()) {
-            case 'callback':
-                $result = call_user_func_array([$this->sm, 'resolveMissingUrl'], [$routeParams, $parsedStdParams]);
-                break;
             case 'empty_host':
-                $result = $this->getContext()->getScheme() . '://' . $this->getContext()->getHost() . '/';
+                $result = sprintf(
+                    '%s://%s%s/',
+                    $this->getContext()->getScheme(),
+                    $this->getContext()->getHost(),
+                    80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : ''
+                );
                 break;
             case 'empty_host_with_locale':
-                $result = $this->getContext()->getScheme() . '://' . $this->getContext()->getHost()
-                    . '/' . $routeParams['_locale'] . '/';
+                $result = sprintf(
+                    '%s://%s%s/%s/',
+                    $this->getContext()->getScheme(),
+                    $this->getContext()->getHost(),
+                    80 !== $this->getContext()->getHttpPort() ? ':' . $this->getContext()->getHttpPort() : '',
+                    $routeParams['_locale']
+                );
+                break;
+            case 'empty':
+                $result = '';
                 break;
             case 'ignore':
                 $result = '#';
@@ -230,83 +257,26 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
     }
 
     /**
+     * @return SeoInterface|bool
+     */
+    private function getLastGeneratedSeoEntity()
+    {
+        return $this->lastGeneratedSeoEntity;
+    }
+
+    /**
      * Sets locale to given parameters array if it is not set. The locale is taken from current request context.
      *
-     * @param array $parameters
-     * @return string
+     * @param string[] $parameters
      */
-    private function setLocale(array &$parameters)
+    private function setLocale(array &$parameters): void
     {
-        $this->currentLocale = $this->getContext()->getParameter('_locale');
-
         if (isset($parameters['_locale'])) {
-            $locale = $parameters['_locale'];
-        } else {
-            $parameters['_locale'] = $locale = ($this->currentLocale) ? $this->currentLocale : $this->defaultLocale;
+            return;
         }
 
-        return $locale;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function match($pathInfo)
-    {
-        try {
-            $match = $this->router->match($pathInfo);
-        } catch (ResourceNotFoundException $ex) {
-            $match = $this->matchStdUrl($pathInfo);
-        }
-
-        return $match;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function matchRequest(Request $request)
-    {
-        try {
-            $match = $this->router->matchRequest($request);
-        } catch (ResourceNotFoundException $ex) {
-            $match = $this->matchStdUrl($request);
-        }
-
-        return $match;
-    }
-
-    /**
-     * @param string $routeName
-     * @return bool
-     */
-    public function isSeoRoute($routeName)
-    {
-        return $this->sm->getGeneratorManager()->isRouteRegistered($routeName);
-    }
-
-    /**
-     * @return \Symfony\Component\Routing\RouteCollection
-     */
-    public function getRouteCollection()
-    {
-        return $this->router->getRouteCollection();
-    }
-
-    /**
-     * @param RequestContext $context
-     */
-    public function setContext(RequestContext $context)
-    {
-        $this->router->setContext($context);
-    }
-
-    /**
-     * @return RequestContext
-     */
-    public function getContext()
-    {
-        return $this->router->getContext();
+        $this->currentLocale = $this->getContext()->getParameter('_locale');
+        $parameters['_locale'] = $this->currentLocale ?: $this->defaultLocale;
     }
 
     /**
@@ -314,13 +284,13 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
      *
      * @param Request|string $matchData
      * @return array
-     * @throws \Exception
      */
-    private function matchStdUrl($matchData)
+    private function matchStdUrl($matchData): array
     {
         $result = [
             '_route' => '',
-            '_controller' => 'nfq_seo.exception_controller:seoShowAction',
+            '__nfq_seo' => [],
+            '_controller' => self::SEO_EXCEPTION_CONTROLLER,
             'exception' => new NotFoundHttpException($this->getNotFoundMessage(), null, 404)
         ];
 
@@ -332,7 +302,7 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
             $locale = $this->router->getContext()->getParameter('_locale');
         }
 
-        if (null === ($stdUrl = $this->sm->getStdUrl($pathInfo, $locale))) {
+        if (null === ($stdUrl = $this->getSeoManager()->getStdUrl($pathInfo, $locale))) {
             return $result;
         }
 
@@ -360,13 +330,14 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
                 break;
             case SeoInterface::STATUS_REDIRECT:
                 //Try to generate new seo url
-                $newSeoUrl = $this->generate($stdMatch['_route'], $routeParams);
+                $this->generate($stdMatch['_route'], $routeParams);
                 $stdUrl = $this->getLastGeneratedSeoEntity();
 
                 //Failed to generated new SEO url
                 if (empty($stdUrl)) {
                     break;
                 }
+            // no break
             case SeoInterface::STATUS_OK:
                 //If stdMatch is seo route, add specific flag to it's parameters, otherwise do not continue
                 if (!$this->isSeoRoute($stdMatch['_route'])) {
@@ -374,12 +345,26 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
                 }
 
                 //Get query parameters from standard uri which should be added back to current uri
-                $this->setRequestParameters($matchData, SeoUtils::diffKeyRecursive($stdQueryParameters, $requestParams));
+                $this->setRequestParameters(
+                    $matchData,
+                    SeoUtils::diffKeyRecursive($stdQueryParameters, $requestParams)
+                );
 
                 ($matchData instanceof Request) && $matchData->attributes->set('__nfq_seo', [
                     'entity' => $stdUrl,
-                    'url' => $this->getContext()->getScheme() . '://' . $this->getContext()->getHost() . $stdUrl->getSeoUrl(),
-                    'alternates' => $this->am->getLangAlternates($stdUrl, $routeParams),
+                    'url' => sprintf(
+                        '%s://%s%s%s',
+                        $this->getContext()->getScheme(),
+                        $this->getContext()->getHost(),
+                        80 !== $this->getContext()->getHttpPort()
+                            ? ':' . $this->getContext()->getHttpPort()
+                            : '',
+                        $stdUrl->getSeoUrl()
+                    ),
+                    'alternates' => $this->getAlternatesManager()->getSeoUrlLangAlternates(
+                        $stdUrl,
+                        $routeParams
+                    ),
                 ]);
 
                 $result = $stdMatch;
@@ -392,29 +377,17 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
     }
 
     /**
-     * @return RequestContext
-     */
-    public function getBackedUpContext()
-    {
-        return $this->backedUpContext;
-    }
-
-    /**
      * Backs up current context, since SEO check does new URI matching it does generate new context.
-     *
-     * @return void
      */
-    private function backupContext()
+    private function backupContext(): void
     {
         $this->backedUpContext = clone $this->getContext();
     }
 
     /**
      * Restores context from backup.
-     *
-     * @return void
      */
-    private function restoreContext()
+    private function restoreContext(): void
     {
         $this->setContext($this->backedUpContext);
         $this->backedUpContext = null;
@@ -423,21 +396,21 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
     /**
      * Creates SEO context, part of the data is based on current context.
      *
-     * @param array $parsedStdUrl
-     *
-     * @return void
+     * @param string[] $parsedStdUrl
      */
-    private function createSeoContext(array $parsedStdUrl)
+    private function createSeoContext(array $parsedStdUrl): void
     {
         $this->backupContext();
 
-        $seoContext = new RequestContext('', 'GET',
+        $seoContext = new RequestContext(
+            '',
+            'GET',
             $this->getContext()->getHost(),
             $this->getContext()->getScheme(),
             $this->getContext()->getHttpPort(),
             $this->getContext()->getHttpsPort(),
             $parsedStdUrl['path'],
-            isset($parsedStdUrl['query']) ? $parsedStdUrl['query'] : ''
+            $parsedStdUrl['query'] ?? ''
         );
 
         $seoContext->setParameters($this->getContext()->getParameters());
@@ -447,9 +420,9 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
 
     /**
      * @param Request|string $matchData
-     * @param array $parameters
+     * @param string[] $parameters
      */
-    private function setRequestParameters($matchData, array $parameters)
+    private function setRequestParameters($matchData, array $parameters): void
     {
         if (empty($parameters)) {
             return;
@@ -469,5 +442,27 @@ class SeoRouter implements RouterInterface, RequestMatcherInterface
                     : '&' . $queryToAppend
             );
         }
+    }
+
+    private function getAlternatesManager(): AlternatesManager
+    {
+        return $this->locator->get(AlternatesManager::class);
+    }
+
+    private function getSeoManager(): SeoManager
+    {
+        return $this->locator->get(SeoManager::class);
+    }
+}
+
+if (Kernel::VERSION_ID >= 40200) {
+    class SeoRouter extends SeoRouterBase implements \Symfony\Contracts\Service\ServiceSubscriberInterface
+    {
+
+    }
+} else {
+    class SeoRouter extends SeoRouterBase implements \Symfony\Component\DependencyInjection\ServiceSubscriberInterface
+    {
+
     }
 }

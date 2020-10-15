@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -13,8 +14,8 @@ namespace Nfq\SeoBundle\Generator;
 use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Model\SeoSlug;
 use Nfq\SeoBundle\Model\SeoSlugInterface;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\PropertyAccess\PropertyPathBuilder;
 
@@ -22,40 +23,27 @@ use Symfony\Component\PropertyAccess\PropertyPathBuilder;
  * Class AbstractSeoGenerator
  * @package Nfq\SeoBundle\Generator
  */
-abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwareInterface
+abstract class AbstractSeoGeneratorBase implements SeoGeneratorInterface
 {
-    use LoggerAwareTrait;
-
-    /**
-     * @var EntityManagerInterface
-     */
-    private $em;
-
-    /**
-     * @var string
-     */
+    /** @var string */
     private $currentRouteName;
 
-    /**
-     * @param \Exception $exception
-     * @param array $payload
-     */
-    protected function logException(\Exception $exception, array $payload)
-    {
-        if (!$this->logger) {
-            throw new \RuntimeException('Set logger service for generator');
-        }
+    /** @var ContainerInterface */
+    private $locator;
 
-        $this->logger->alert(
-            $exception->getMessage() ? $exception->getMessage() : 'Failed to fill missing allowed parameters',
-            $payload
-        );
+    public function __construct(ContainerInterface $locator)
+    {
+        $this->locator = $locator;
     }
 
-    /**
-     * @return SeoSlugInterface
-     */
-    protected function getSeoSlug()
+    public static function getSubscribedServices(): array
+    {
+        return [
+            EntityManagerInterface::class,
+        ];
+    }
+
+    protected function getSeoSlug(): SeoSlugInterface
     {
         $seoSlug = new SeoSlug();
         $seoSlug->setRouteName($this->getCurrentRouteName());
@@ -63,52 +51,30 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
         return $seoSlug;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setCurrentRouteName($routeName)
+    public function setCurrentRouteName(string $routeName): SeoGeneratorInterface
     {
         $this->currentRouteName = $routeName;
         return $this;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getCurrentRouteName()
+    public function getCurrentRouteName(): string
     {
         return $this->currentRouteName;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setEntityManager(EntityManagerInterface $em)
+    public function getEntityManager(): EntityManagerInterface
     {
-        $this->em = $em;
-        return $this;
+        return $this->locator->get(EntityManagerInterface::class);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getEntityManager()
-    {
-        return $this->em;
-    }
-
-    /**
-     * @param array $params
-     * @param array $params2
-     * @param array $params3
-     * @return array
-     */
-    protected function buildAllowedQueryParams(array $params, array $params2 = [], array $params3 = [])
+    protected function buildAllowedQueryParams(array ...$queryParams)
     {
         $allowedParams = $this->getAllowedQueryParams();
         $allowedParams = array_merge(['path' => true], $allowedParams);
 
-        $arrays = array_replace_recursive($params, $params2, $params3);
+        $params = array_shift($queryParams);
+
+        $arrays = array_replace_recursive($params, ...$queryParams);
 
         $recIteratorIt = new \RecursiveIteratorIterator(
             new \RecursiveArrayIterator($allowedParams),
@@ -167,8 +133,25 @@ abstract class AbstractSeoGenerator implements SeoGeneratorInterface, LoggerAwar
      * @param array $params contains all available parameters for that request
      * @return mixed
      */
-    protected function setMissingAllowedParameters(array $allowedParams, array $allowedNotSetPaths, array $params)
-    {
+    protected function setMissingAllowedParameters(
+        array $allowedParams,
+        array $allowedNotSetPaths,
+        array $params
+    ): array {
         return $allowedParams;
+    }
+}
+
+if (Kernel::VERSION_ID >= 40200) {
+    abstract class AbstractSeoGenerator extends AbstractSeoGeneratorBase
+        implements \Symfony\Contracts\Service\ServiceSubscriberInterface
+    {
+
+    }
+} else {
+    abstract class AbstractSeoGenerator extends AbstractSeoGeneratorBase
+        implements \Symfony\Component\DependencyInjection\ServiceSubscriberInterface
+    {
+
     }
 }

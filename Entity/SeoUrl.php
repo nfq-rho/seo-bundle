@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -11,19 +12,18 @@
 namespace Nfq\SeoBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Nfq\SeoBundle\Entity\MappedSuperclass\SeoUrl as SeoBase;
 
 /**
- * Seo
- *
- * @ORM\Table(name="seo_urls",
+ * @ORM\Entity()
+ * @ORM\Table(
  *      indexes={
- *          @ORM\Index(name="route_locale_entity_idx", columns={"route_name", "locale", "entity_id"}),
- *          @ORM\Index(name="std_path_hash_idx", columns={"std_path_hash"}),
+ *          @ORM\Index(name="route_locale_entity_index", columns={"route_name", "locale", "entity_id"}),
+ *          @ORM\Index(name="std_path_hash_index", columns={"std_path_hash"}),
  *      }
  * )
- * @ORM\Entity
  */
-class Seo extends \Nfq\SeoBundle\Entity\MappedSuperclass\Seo implements SeoInterface
+class SeoUrl extends SeoBase
 {
 
 }

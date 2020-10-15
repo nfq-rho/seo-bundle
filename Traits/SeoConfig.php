@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -16,79 +17,55 @@ namespace Nfq\SeoBundle\Traits;
  */
 trait SeoConfig
 {
-    /**
-     * @var array
-     */
+    /** @var array */
     private $config = [];
 
-    /**
-     * @param $pathSeparator
-     * @return $this
-     */
-    public function setPathSeparator($pathSeparator)
+    public function setCacheTtl(int $ttl): void
     {
-        $this->config['path_separator'] = $pathSeparator;
-        return $this;
+        $this->config['cache_ttl'] = $ttl;
     }
 
-    /**
-     * @return string
-     */
-    public function getPathSeparator()
+    public function getCacheTtl(): int
+    {
+        return (int)$this->config['cache_ttl'];
+    }
+
+    public function setPathSeparator(string $pathSeparator): void
+    {
+        $this->config['path_separator'] = $pathSeparator;
+    }
+
+    public function getPathSeparator(): string
     {
         return $this->config['path_separator'];
     }
 
-    /**
-     * @param string $slugSeparator
-     * @return $this
-     */
-    public function setSlugSeparator($slugSeparator)
+    public function setSlugSeparator(string $slugSeparator): void
     {
         $this->config['slug_separator'] = $slugSeparator;
-        return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getSlugSeparator()
+    public function getSlugSeparator(): string
     {
         return $this->config['slug_separator'];
     }
 
-    /**
-     * @param string $message
-     * @return $this
-     */
-    public function setNotFoundMessage($message)
+    public function setNotFoundMessage(string $message): void
     {
         $this->config['exception_message'] = $message;
-        return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getNotFoundMessage()
+    public function getNotFoundMessage(): string
     {
         return $this->config['exception_message'];
     }
 
-    /**
-     * @param string $strategy
-     * @return $this
-     */
-    public function setMissingUrlStrategy($strategy)
+    public function setMissingUrlStrategy(?string $strategy): void
     {
         $this->config['missing_url_strategy'] = $strategy;
-        return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getMissingUrlStrategy()
+    public function getMissingUrlStrategy(): ?string
     {
         return $this->config['missing_url_strategy'];
     }

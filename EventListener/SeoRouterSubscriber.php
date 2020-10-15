@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -11,15 +12,17 @@
 namespace Nfq\SeoBundle\EventListener;
 
 use Nfq\SeoBundle\Entity\SeoInterface;
+use Nfq\SeoBundle\Routing\NotFoundResolverInterface;
+use Nfq\SeoBundle\Routing\SeoRouter;
 use Nfq\SeoBundle\Service\SeoManager;
-use Nfq\SeoBundle\Page\SeoPageInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Symfony\Component\Routing\RouterInterface;
 
 /**
  * Class SeoRouterSubscriber
@@ -27,35 +30,26 @@ use Symfony\Component\HttpKernel\Event\GetResponseEvent;
  */
 class SeoRouterSubscriber implements EventSubscriberInterface
 {
-    /**
-     * @var array
-     */
-    private $seoData;
-
-    /**
-     * @var SeoManager
-     */
+    /** @var SeoManager */
     private $sm;
 
-    /**
-     * @var SeoPageInterface
-     */
-    private $sp;
+    /** @var SeoRouter|RouterInterface */
+    private $router;
 
-    /**
-     * @param SeoManager $sm
-     * @param SeoPageInterface $sp
-     */
-    public function __construct($sm, SeoPageInterface $sp)
-    {
+    /** @var null|NotFoundResolverInterface */
+    private $notFoundResolver;
+
+    public function __construct(
+        SeoManager $sm,
+        RouterInterface $router,
+        NotFoundResolverInterface $notFoundResolver = null
+    ) {
         $this->sm = $sm;
-        $this->sp = $sp;
+        $this->router = $router;
+        $this->notFoundResolver = $notFoundResolver;
     }
 
-    /**
-     * @return array
-     */
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             KernelEvents::REQUEST => [
@@ -64,60 +58,78 @@ class SeoRouterSubscriber implements EventSubscriberInterface
         ];
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    public function onKernelRequest(GetResponseEvent $event)
-    {
-        //We're only interested in master requests
-        if (!$event->isMasterRequest() || $this->isDebugRequest($event->getRequest())) {
-            return;
-        }
-
-        $this->hasSeoData($event->getRequest());
-
-        $this->handleStdToSeo($event);
-
-        if ($event->isPropagationStopped()) {
-            return;
-        }
-
-        $this->handleSeoRedirect($event);
-
-        if ($event->isPropagationStopped()) {
-            return;
-        }
-
-        $this->setSeoPageData($event);
-    }
-
-    /**
-     * @param Request $request
-     * @return array|bool
-     */
-    private function hasSeoData(Request $request)
-    {
-        if ($this->seoData !== null) {
-            return $this->seoData;
-        }
-
-        $this->seoData = false;
-
-        if ($seoData = $request->attributes->get('__nfq_seo')) {
-            $this->seoData = $seoData;
-        }
-
-        return $this->seoData;
-    }
-
-    /**
-     * @param GetResponseEvent $event
-     */
-    private function handleSeoRedirect(GetResponseEvent $event)
+    public function onKernelRequest(GetResponseEvent $event): void
     {
         $request = $event->getRequest();
 
-        if (!$seoData = $this->hasSeoData($request)) {
+        //We're only interested in master page requests
+        if (!$event->isMasterRequest() || $this->isFileRequest($request) || $this->isDebugRequest($request)) {
+            return;
+        }
+
+        $this->handle404($event);
+
+        $this->handleStdToSeoRedirect($event);
+
+        $seoData = $this->extractSeoDataFromRequest($request);
+
+        if (null === $seoData) {
+            return;
+        }
+
+        $this->handleCaseRedirect($event, $seoData);
+        $this->handleSeoRedirect($event, $seoData);
+    }
+
+    private function extractSeoDataFromRequest(Request $request): ?array
+    {
+        $seoData = $request->attributes->get('__nfq_seo');
+        return empty($seoData) ? null : $seoData;
+    }
+
+    private function handle404(GetResponseEvent $event): void
+    {
+        $request = $event->getRequest();
+
+        if (null === $this->notFoundResolver
+            || !$request->isMethod('GET')
+            || $request->attributes->get('_controller') !== SeoRouter::SEO_EXCEPTION_CONTROLLER) {
+            return;
+        }
+
+        $newUrl = $this->notFoundResolver->resolve($request);
+
+        if (null === $newUrl) {
+            return;
+        }
+
+        $this->issueRedirect($event, $newUrl);
+    }
+
+    private function handleCaseRedirect(GetResponseEvent $event, array $seoData): void
+    {
+        if ($event->isPropagationStopped()) {
+            return;
+        }
+
+        $request = $event->getRequest();
+
+        /** @var SeoInterface $seoEntity */
+        $seoEntity = $seoData['entity'];
+
+        //Check if current path is same as seo path.
+        //This is for, for example, avoiding uppercase letters in SEO path
+        /** @TODO add config value for `url_case_check` */
+        if ($request->getPathInfo() !== $seoEntity->getSeoUrl()) {
+            $redirectToUrl = $this->getFullUri($request, $seoEntity->getSeoUrl());
+
+            $this->issueRedirect($event, $redirectToUrl);
+        }
+    }
+
+    private function handleSeoRedirect(GetResponseEvent $event, array $seoData): void
+    {
+        if ($event->isPropagationStopped()) {
             return;
         }
 
@@ -138,13 +150,14 @@ class SeoRouterSubscriber implements EventSubscriberInterface
             throw new NotFoundHttpException();
         }
 
-        $this->issueRedirect($event, $seoUrlRedirect);
+        $request = $event->getRequest();
+
+        $redirectToUrl = $this->getFullUri($request, $seoUrlRedirect->getSeoUrl());
+
+        $this->issueRedirect($event, $redirectToUrl);
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    private function handleStdToSeo(GetResponseEvent $event)
+    private function handleStdToSeoRedirect(GetResponseEvent $event): void
     {
         $request = $event->getRequest();
 
@@ -154,103 +167,50 @@ class SeoRouterSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $routeName = $request->attributes->get('_route');
         $routeParameters = array_merge(
             $request->attributes->get('_route_params'),
-            $request->query->all(),
-            [
-                'path' => $request->getPathInfo(),
-            ]
+            $request->query->all()
         );
 
-        $seoUrl = $this->sm->getActiveSeoUrl($request->attributes->get('_route'), $routeParameters);
+        $redirectToUrl = $this->router->generate($routeName, $routeParameters);
 
-        //Send permanent redirect from standard to seo URL
-        if (!$seoUrl) {
+        //Seo url can't be generated just continue the request
+        if ($redirectToUrl === $request->getPathInfo()) {
             return;
         }
 
-        $this->issueRedirect($event, $seoUrl);
+        $this->issueRedirect($event, $redirectToUrl);
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    private function setSeoPageData(GetResponseEvent $event)
+    private function issueRedirect(GetResponseEvent $event, string $url): void
     {
-        $request = $event->getRequest();
-
-        $this->sp->setLocale($request->getLocale());
-        $this->sp->setHost($request->getSchemeAndHttpHost());
-        $this->sp->setSimpleHost('http://' . $request->getHost());
-
-        if (!$seoData = $this->hasSeoData($request)) {
-            return;
-        }
-
-        /** @var SeoInterface $seoEntity */
-        $seoEntity = $seoData['entity'];
-
-        $fullUri = $this->getFullUri($seoData['url'], $request->getQueryString());
-
-        //Check if current path is same as seo path.
-        //This is for, for example, avoiding uppercase letters in SEO path
-        /** @TODO add config value for `url_case_check` */
-        if ($request->getPathInfo() !== $seoEntity->getSeoUrl()) {
-            $event->setResponse(
-                new RedirectResponse($fullUri, 301)
-            );
-
-            return;
-        }
-
-        $this->sp->setLinkCanonical($fullUri);
-        $this->sp->setLangAlternates($seoData['alternates']);
-    }
-
-    /**
-     * @param string $path
-     * @param string $queryString
-     * @return string
-     */
-    private function getFullUri($path, $queryString)
-    {
-        return $path . (!$queryString ? '' : '?' . $queryString);
-    }
-
-    /**
-     * @param Request $request
-     * @return bool
-     */
-    private function isDebugRequest(Request $request)
-    {
-        return in_array($request->attributes->get('_route'), ['_wdt']);
-    }
-
-    /**
-     * @param ParameterBag $requestAttributes
-     * @return bool
-     */
-    private function isSeoRequestAsStd($requestAttributes)
-    {
-        return !$requestAttributes->has('__nfq_seo')
-            && $this->sm->getGeneratorManager()->isRouteRegistered($requestAttributes->get('_route'));
-    }
-
-    /**
-     * @param GetResponseEvent $event
-     * @param SeoInterface $seoUrl
-     */
-    private function issueRedirect(GetResponseEvent $event, SeoInterface $seoUrl)
-    {
-        /**
-         * @TODO: remove params from $requestQueryString which are in $seoUrl->getStdUrl()
-         */
         $event->setResponse(
-            new RedirectResponse(
-                $this->getFullUri($seoUrl->getSeoUrl(), $event->getRequest()->getQueryString()), 301
-            )
+            new RedirectResponse($url, 301)
         );
 
         $event->stopPropagation();
+    }
+
+    private function getFullUri(Request $request, string $path): string
+    {
+        $qs = $request->getQueryString();
+        return $request->getUriForPath($path) . ($qs ? '?' . $qs : '');
+    }
+
+    private function isFileRequest(Request $request): bool
+    {
+        return (bool)preg_match('~\.[a-z0-9]{2,3}$~', $request->getRequestUri());
+    }
+
+    private function isDebugRequest(Request $request): bool
+    {
+        return $request->attributes->get('_route') === '_wdt';
+    }
+
+    private function isSeoRequestAsStd(ParameterBag $requestAttributes): bool
+    {
+        return !$requestAttributes->has('__nfq_seo')
+            && $this->sm->getGeneratorManager()->isRouteRegistered($requestAttributes->get('_route'));
     }
 }

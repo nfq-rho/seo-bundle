@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,147 +11,210 @@
 
 namespace Nfq\SeoBundle\Invalidator;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Entity\SeoInterface;
 use Nfq\SeoBundle\Invalidator\Object\InvalidationObjectInterface;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * Class AbstractSeoInvalidator
  * @package Nfq\SeoBundle\Invalidator
  */
-abstract class AbstractSeoInvalidator implements SeoInvalidatorInterface
+abstract class AbstractSeoInvalidatorBase implements SeoInvalidatorInterface
 {
-    /**
-     * @var string
-     */
-    private $currentRouteName;
+    /** @var string[] */
+    private $routes;
 
-    /**
-     * @var EntityManagerInterface
-     */
-    private $em;
+    /** @var ContainerInterface */
+    private $locator;
 
-    /**
-     * @inheritdoc
-     */
-    public function getRouteName()
+    public function __construct(ContainerInterface $locator)
     {
-        return $this->currentRouteName;
+        $this->locator = $locator;
+        $this->routes = [];
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setRouteName($routeName)
+    public static function getSubscribedServices(): array
     {
-        $this->currentRouteName = $routeName;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setEntityManager(EntityManagerInterface $em)
-    {
-        $this->em = $em;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getEntityManager()
-    {
-        return $this->em;
-    }
-
-    /**
-     * @param InvalidationObjectInterface $invalidationObject
-     * @return $this
-     * @throws \Doctrine\DBAL\DBALException
-     */
-    protected function executeRemoval(InvalidationObjectInterface $invalidationObject)
-    {
-        $statement = 'DELETE FROM seo_urls WHERE route_name = :routeName AND entity_id = :entityId';
-
-        $whereParams = [
-            'routeName' => $this->getRouteName(),
-            'entityId' => $invalidationObject->getEntity()->getId(),
+        return [
+            'doctrine' => EntityManagerInterface::class,
         ];
-
-        $this->executeStatement($statement, $whereParams);
-
-        return $this;
     }
 
-    /**
-     * @param InvalidationObjectInterface $invalidationObject
-     * @return $this
-     * @throws \Doctrine\DBAL\DBALException
-     */
-    protected function executeInvalidation(InvalidationObjectInterface $invalidationObject)
+    public function addRoute(string $routeName): void
     {
-        if (!$invalidationObject->hasChanges()) {
-            return $this;
+        if (in_array($routeName, $this->routes, true)) {
+            return;
         }
 
-        $queryString = $this->getInvalidationQueryString($invalidationObject);
+        $this->routes[] = $routeName;
+    }
 
-        $whereParams = array_merge([
-            'route_name' => $this->getRouteName(),
-            'locale' => $invalidationObject->getLocale(),
-        ], $invalidationObject->getWhereParams(), [
-            'active_status' => SeoInterface::STATUS_OK,
-            'target_status' => $invalidationObject->getInvalidationStatus()
-        ]);
-        
-        $whereParams = array_filter($whereParams, function ($value) {
-            return $value !== null;
-        });
+    public function getRoutes(): array
+    {
+        return $this->routes;
+    }
 
-        $this->executeStatement($queryString, $whereParams);
-
-        return $this;
+    public function getEntityManager(): EntityManagerInterface
+    {
+        return $this->locator->get('doctrine');
     }
 
     /**
-     * @param string $queryString
-     * @param array $params
      * @throws \Doctrine\DBAL\DBALException
      */
-    protected function executeStatement($queryString, $params)
+    protected function executeRemoval(InvalidationObjectInterface $invalidationObject): void
     {
-        $stmt = $this->getEntityManager()->getConnection()->prepare($queryString);
-        $stmt->execute($params);
-        $stmt->closeCursor();
+        $whereParams = array_merge(
+            [
+                'route_names' => $this->getRoutes(),
+            ],
+            $invalidationObject->getWhereParams(),
+            [
+                'target_status' => SeoInterface::STATUS_INVALID,
+            ]
+        );
+
+        $whereParams = array_filter($whereParams, function ($value) {
+            return $value !== null && $value !== [];
+        });
+
+        $this->executeStatement(
+            $this->getRemovalQueryString($invalidationObject, $whereParams),
+            $whereParams,
+            $invalidationObject->getWhereParamTypes()
+        );
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    protected function executeInvalidation(InvalidationObjectInterface $invalidationObject): void
+    {
+        if (!$invalidationObject->hasChanges()) {
+            return;
+        }
+
+        $whereParams = array_merge(
+            [
+                'locale' => $invalidationObject->getLocale(),
+                'route_names' => $this->getRoutes(),
+            ],
+            $invalidationObject->getWhereParams(),
+            [
+                'active_status' => SeoInterface::STATUS_OK,
+                'target_status' => $invalidationObject->getInvalidationStatus()
+            ]
+        );
+
+        $whereParams = array_filter($whereParams, function ($value) {
+            return $value !== null && $value !== [];
+        });
+
+        $this->executeStatement(
+            $this->getInvalidationQueryString($invalidationObject, $whereParams),
+            $whereParams,
+            $invalidationObject->getWhereParamTypes()
+        );
+    }
+
+    /**
+     * @param string[] $params
+     * @param string[] $types
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    protected function executeStatement(string $queryString, array $params, array $types): int
+    {
+        $conn = $this->getEntityManager()->getConnection();
+        return $conn->executeUpdate($queryString, $params,
+            array_merge(
+                [
+                    'route_names' => Connection::PARAM_STR_ARRAY,
+                ],
+                $types
+            )
+        );
     }
 
     /**
      * Builds invalidation query based on given invalidation object. The invalidation is executed only
      * for active urls.
-     *
-     * @param InvalidationObjectInterface $invalidationObject
-     * @return string
-     * @throws \Exception
      */
-    private function getInvalidationQueryString(InvalidationObjectInterface $invalidationObject)
-    {
-        $query = 'UPDATE seo_urls su ';
+    private function getInvalidationQueryString(
+        InvalidationObjectInterface $invalidationObject,
+        array $whereParams
+    ): string {
+        $query = 'UPDATE seo_url su';
 
         if ($joinPart = $invalidationObject->getJoinPart()) {
-            $query .= sprintf('JOIN %s ', $joinPart);
+            $query .= sprintf(' JOIN %s ', $joinPart);
         }
 
-        $query .= 'SET su.status = :target_status WHERE su.status = :active_status AND su.route_name = :route_name';
+        $query .= ' SET su.status = :target_status WHERE su.status = :active_status ';
 
-        if (null !== $invalidationObject->getLocale()) {
-            $query .= ' AND su.locale = :locale';
+        if (isset($whereParams['locale'])) {
+            $query .= ' AND su.locale = :locale ';
+        }
+
+        $query .= ' AND ( ';
+
+        if (isset($whereParams['route_names'], $whereParams['entity_id'])) {
+            $query .= ' (su.route_name IN (:route_names) AND su.entity_id = :entity_id) ';
         }
 
         if ($wherePart = $invalidationObject->getWherePart()) {
-            $query .= sprintf(' AND %s', $wherePart);
+            $query .= ' ' . $wherePart . ' ';
         }
 
+        $query .= ' ) ';
+
         return $query;
+    }
+
+    /**
+     * Builds removal query based on given invalidation object. The invalidation is executed only
+     * for active urls.
+     */
+    private function getRemovalQueryString(
+        InvalidationObjectInterface $invalidationObject,
+        array $whereParams
+    ): string {
+        $query = 'UPDATE seo_url su';
+
+        if ($joinPart = $invalidationObject->getJoinPart()) {
+            $query .= sprintf(' JOIN %s ', $joinPart);
+        }
+
+        $query .= ' SET su.status = :target_status WHERE';
+
+        $query .= ' ( ';
+
+        if (isset($whereParams['route_names'], $whereParams['entity_id'])) {
+            $query .= ' (su.route_name IN (:route_names) AND su.entity_id = :entity_id) ';
+        }
+
+        if ($wherePart = $invalidationObject->getWherePart()) {
+            $query .= ' ' . $wherePart . ' ';
+        }
+
+        $query .= ' ) ';
+
+        return $query;
+    }
+}
+
+if (Kernel::VERSION_ID >= 40200) {
+    abstract class AbstractSeoInvalidator extends AbstractSeoInvalidatorBase
+        implements \Symfony\Contracts\Service\ServiceSubscriberInterface
+    {
+
+    }
+} else {
+    abstract class AbstractSeoInvalidator extends AbstractSeoInvalidatorBase
+        implements \Symfony\Component\DependencyInjection\ServiceSubscriberInterface
+    {
+
     }
 }

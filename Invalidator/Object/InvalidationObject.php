@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,6 +11,7 @@
 
 namespace Nfq\SeoBundle\Invalidator\Object;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Nfq\SeoBundle\Entity\SeoInterface;
 
 /**
@@ -18,91 +20,89 @@ use Nfq\SeoBundle\Entity\SeoInterface;
  */
 abstract class InvalidationObject implements InvalidationObjectInterface
 {
-    /**
-     * @var array
-     */
-    protected $changeSet = [];
+    /** @var EntityManagerInterface */
+    private $em;
 
-    /**
-     * @var bool
-     */
-    private $hasChanges = false;
-
-    /**
-     * @var object
-     */
+    /** @var object */
     private $entity;
 
-    /**
-     * @var string|null
-     */
-    protected $locale = null;
+    /** @var bool */
+    private $hasChanges = false;
+
+    /** @var string|null */
+    private $locale;
+
+    /** @var array */
+    protected $changeSet = [];
 
     /**
      * Get an array of attribute names which should cause invalidation when modified.
      *
-     * @return array
+     * @return string[]
      */
-    abstract protected function getInvalidationAttributes();
+    abstract protected function getInvalidationAttributes(): array;
 
-    /**
-     * InvalidationObject constructor.
-     * @param object $entity
-     * @param array $changeSet
-     */
-    public function __construct($entity, array $changeSet)
+    public function __construct(EntityManagerInterface $em, $entity, ?array $changeSet)
     {
-        $this->changeSet = $changeSet;
+        $this->em = $em;
         $this->entity = $entity;
 
         if (method_exists($entity, 'getLocale')) {
             $this->locale = $entity->getLocale();
         }
 
-        $this->checkForChanges();
+        $this->checkForChanges($changeSet);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getLocale()
+    public function getLocale(): ?string
     {
         return $this->locale;
     }
 
-    /**
-     * @inheritdoc
-     */
     public function getEntity()
     {
         return $this->entity;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function hasChanges()
+    public function hasChanges(): bool
     {
         return $this->hasChanges;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getInvalidationStatus()
+    public function getInvalidationStatus(): int
     {
         return SeoInterface::STATUS_REDIRECT;
     }
 
-    /**
-     * @inheritdoc
-     */
-    protected function checkForChanges()
+    public function getJoinPart(): ?string
     {
+        return null;
+    }
+
+    public function getWhereParamTypes(): array
+    {
+        return [];
+    }
+
+    protected function getEntityManager(): EntityManagerInterface
+    {
+        return $this->em;
+    }
+
+    /**
+     * @param null|string[] $changeSet
+     */
+    protected function checkForChanges(?array $changeSet): void
+    {
+        if (null === $changeSet) {
+            return;
+        }
+
         $flippedInvalidationAttributes = array_flip($this->getInvalidationAttributes());
 
-        if ($changedAttributes = array_intersect_key($this->changeSet, $flippedInvalidationAttributes)) {
+        if ($changedAttributes = array_intersect_key($changeSet, $flippedInvalidationAttributes)) {
             $this->hasChanges = true;
+            $this->changeSet = $changeSet;
         }
     }
 }

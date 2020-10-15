@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -21,76 +22,42 @@ use Symfony\Component\Translation\TranslatorInterface;
  */
 class SeoExtension extends \Twig_Extension
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     private $defaultLocale;
 
-    /**
-     * @var string
-     */
+    /**  @var string */
     private $encoding;
 
-    /**
-     * @var SeoPageInterface
-     */
+    /** @var SeoPageInterface */
     private $sp;
 
-    /**
-     * @var TranslatorInterface
-     */
+    /** @var TranslatorInterface */
     private $translator;
 
-    /**
-     * @param SeoPageInterface $sp
-     * @param TranslatorInterface $translator
-     */
     public function __construct(SeoPageInterface $sp, TranslatorInterface $translator)
     {
         $this->sp = $sp;
         $this->translator = $translator;
     }
 
-    /**
-     * @param string $defaultLocale
-     */
-    public function setDefaultLocale($defaultLocale)
+    public function setDefaultLocale(string $defaultLocale): void
     {
         $this->defaultLocale = $defaultLocale;
     }
 
-    /**
-     * @param string $encoding
-     */
-    public function setEncoding($encoding)
+    public function setEncoding(string $encoding): void
     {
         $this->encoding = $encoding;
     }
 
-    /**
-     * @return array
-     */
-    public function getTokenParsers()
+    public function getTokenParsers(): array
     {
         return [
             new SeoTagTokenParser()
         ];
     }
 
-    /**
-     * Returns the name of the extension.
-     *
-     * @return string The extension name
-     */
-    public function getName()
-    {
-        return 'nfq_seo';
-    }
-
-    /**
-     * @return string
-     */
-    public function getTitle($title = null)
+    public function getTitle(string $title = null): string
     {
         if (empty($title)) {
             $title = $this->sp->getTitle();
@@ -104,11 +71,7 @@ class SeoExtension extends \Twig_Extension
         return sprintf('<title>%s</title>' . PHP_EOL, strip_tags($title));
     }
 
-    /**
-     * @param array $predefinedMetaTags
-     * @return string
-     */
-    public function getMetaTags(array $predefinedMetaTags = [])
+    public function getMetaTags(array $predefinedMetaTags = []): string
     {
         $html = '';
 
@@ -121,7 +84,7 @@ class SeoExtension extends \Twig_Extension
                     $content = $predefinedMetaTags[$name];
                     $extras = [];
                 } else {
-                    list($content, $extras) = $meta;
+                    [$content, $extras] = $meta;
                 }
 
                 if ($content === false) {
@@ -146,10 +109,7 @@ class SeoExtension extends \Twig_Extension
         return $html;
     }
 
-    /**
-     * @return string
-     */
-    public function getHtmlAttributes()
+    public function getHtmlAttributes(): string
     {
         $attributes = '';
         foreach ($this->sp->getHtmlAttributes() as $name => $value) {
@@ -159,10 +119,7 @@ class SeoExtension extends \Twig_Extension
         return rtrim($attributes);
     }
 
-    /**
-     * @return string
-     */
-    public function getHeadAttributes()
+    public function getHeadAttributes(): string
     {
         $attributes = '';
         $merged = array_merge($this->getDefaultHeadAttributes(), $this->sp->getHeadAttributes());
@@ -173,20 +130,18 @@ class SeoExtension extends \Twig_Extension
         return rtrim($attributes);
     }
 
-    /**
-     * @return array
-     */
-    private function getDefaultHeadAttributes()
+    private function getDefaultHeadAttributes(): array
     {
-        return [
-            'lang' => SeoHelper::getLangFromLocale($this->sp->getLocale(), $this->defaultLocale),
-        ];
+        $result = [];
+
+        if (null !== $locale = $this->sp->getLocale()) {
+            $result['lang'] = SeoHelper::getLangFromLocale($locale, $this->defaultLocale);
+        }
+
+        return $result;
     }
 
-    /**
-     * @return string
-     */
-    public function getMetaLinks()
+    public function getMetaLinks(): string
     {
         $html = '';
 
@@ -197,27 +152,22 @@ class SeoExtension extends \Twig_Extension
         return $html;
     }
 
-    /**
-     * @return string
-     */
-    private function getLinkCanonical()
+    private function getLinkCanonical(): string
     {
         $canonical = $this->sp->getLinkCanonical();
 
         if (!empty($canonical)) {
-            return sprintf("<link rel=\"%s\" href=\"%s\" />\n",
+            return sprintf(
+                "<link rel=\"%s\" href=\"%s\" />\n",
                 SeoPageInterface::SEO_REL_CANONICAL,
-                $this->formatCanonicalUri($canonical)
+                $this->sp->formatCanonicalUrl($canonical)
             );
         }
 
         return '';
     }
 
-    /**
-     * @return string
-     */
-    private function getLangAlternates()
+    private function getLangAlternates(): string
     {
         $html = '';
 
@@ -225,7 +175,7 @@ class SeoExtension extends \Twig_Extension
             $html .= sprintf(
                 "<link rel=\"%s\" href=\"%s\" hreflang=\"%s\" />\n",
                 SeoPageInterface::SEO_REL_ALTERNATE,
-                $this->formatCanonicalUri($uri),
+                $this->sp->formatCanonicalUrl($uri),
                 $hrefLang
             );
         }
@@ -233,69 +183,44 @@ class SeoExtension extends \Twig_Extension
         return $html;
     }
 
-    /**
-     * @return string
-     */
-    private function getNextPrevRels()
+    private function getNextPrevRels(): string
     {
         $html = '';
         $host = $this->sp->getHost();
 
         $prev = $this->sp->getLinkPrevPage();
         if (!empty($prev)) {
-            $html .= sprintf("<link rel=\"%s\" href=\"%s\" />",
+            $html .= sprintf(
+                "<link rel=\"%s\" href=\"%s\" />",
                 SeoPageInterface::SEO_REL_PREV,
-                $this->formatCanonicalUri($host . $prev)
+                $this->sp->formatCanonicalUrl($host . $prev)
             );
         }
 
         $next = $this->sp->getLinkNextPage();
         if (!empty($next)) {
-            $html .= sprintf("<link rel=\"%s\" href=\"%s\" />",
+            $html .= sprintf(
+                "<link rel=\"%s\" href=\"%s\" />",
                 SeoPageInterface::SEO_REL_NEXT,
-                $this->formatCanonicalUri($host . $next)
+                $this->sp->formatCanonicalUrl($host . $next)
             );
         }
 
         return $html;
     }
 
-    /**
-     * @param string $uri
-     * @return string
-     */
-    private function formatCanonicalUri($uri)
+    private function normalize(string $string, array $extras = []): string
     {
-        $allowedQueryParams = $this->sp->getLinkOptions('allowed_canonical_parameters');
-        $parsedQueryString = parse_url(rawurldecode($uri), PHP_URL_QUERY);
-
-        if (!empty($allowedQueryParams) && !empty($parsedQueryString)) {
-            $flippedParams = array_flip($allowedQueryParams);
-
-            parse_str($parsedQueryString, $parsedQueryStringArr);
-            $allowedQueryStringArr = array_intersect_key($parsedQueryStringArr, $flippedParams);
-
-            list($uriPath,) = explode('?', $uri, 2);
-
-            return SeoHelper::getUri($uriPath, $allowedQueryStringArr);
-        }
-
-        return $uri;
-    }
-
-    /**
-     * @param $string
-     * @param array $extras
-     * @return string
-     */
-    private function normalize($string, $extras = [])
-    {
-        if (isset($extras['translatable']) && $extras['translatable'] === true) {
+        if (isset($extras['trans']) && true === $extras['trans']) {
+            unset($extras['trans']);
             $string = $this->translator->trans($string, $extras);
         }
 
-        $string = str_replace('%simple_host%', $this->sp->getSimpleHost(), $string);
-        $string = str_replace('%host%', $this->sp->getHost(), $string);
+        $string = str_replace(
+            ['%simple_host%', '%host%'],
+            [$this->sp->getSimpleHost(), $this->sp->getHost()],
+            $string
+        );
 
         return htmlspecialchars(strip_tags($string), ENT_COMPAT, $this->encoding);
     }

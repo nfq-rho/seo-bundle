@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -21,47 +22,43 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class SeoDefaultLocaleListener implements EventSubscriberInterface
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $defaultLocale;
 
-    /**
-     * @param string $defaultLocale
-     */
-    public function setDefaultLocale($defaultLocale)
+    public function __construct(string $defaultLocale)
     {
         $this->defaultLocale = $defaultLocale;
     }
 
-    /**
-     * @param GetResponseEvent $event
-     */
-    public function onKernelRequest(GetResponseEvent $event)
-    {
-        if (empty($this->defaultLocale)) {
-            return;
-        }
-
-        $request = $event->getRequest();
-        $this->setLocale($request);
-    }
-
-    /**
-     * @param Request $request
-     */
-    private function setLocale(Request $request)
-    {
-        $request->setDefaultLocale($this->defaultLocale);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             KernelEvents::REQUEST => ['onKernelRequest', 33],
         ];
+    }
+
+    public function onKernelRequest(GetResponseEvent $event): void
+    {
+        if (!$event->isMasterRequest()) {
+            return;
+        }
+
+        $request = $event->getRequest();
+        $pathInfo = $request->getPathInfo();
+
+        $request->setDefaultLocale($this->defaultLocale);
+
+        if (null !== $locale = $this->extractLocaleFromPath($pathInfo)) {
+            $request->setDefaultLocale($locale);
+        }
+    }
+
+    private function extractLocaleFromPath(string $pathInfo): ?string
+    {
+        if (preg_match('/^\/([a-z]{2})\/.*/', $pathInfo, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
     }
 }

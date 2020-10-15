@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -10,17 +11,17 @@
 
 namespace Nfq\SeoBundle\Invalidator\Object;
 
+use Doctrine\ORM\EntityManagerInterface;
+
 /**
  * Interface ObjectFactoryInterface
  * @package Nfq\SeoBundle\Invalidator\Object
  */
 interface ObjectFactoryInterface
 {
-    /**
-     * @param object $entity
-     * @param array $changeSet
-     * @return InvalidationObjectInterface
-     * @throws \InvalidArgumentException
-     */
-    public static function buildInvalidationObject($entity, array $changeSet);
+    public static function buildInvalidationObject(
+        EntityManagerInterface $em,
+        $entity,
+        ?array $changeSet
+    ): InvalidationObjectInterface;
 }

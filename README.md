@@ -23,8 +23,6 @@ Add NfqSeoBundle in to your composer.json:
 
 ### Step 2: Enable the bundle
 
-**Note**: This bundle depends on `tedivm/stash-bundle`
-
 Enable the bundle in the kernel.:
 
 	<?php
@@ -34,7 +32,6 @@ Enable the bundle in the kernel.:
 	{
 	    $bundles = array(
         	// ...
-			new Tedivm\StashBundle\TedivmStashBundle(),
         	new Nfq\SeoBundle\NfqSeoBundle(),
     	);
 	}
@@ -44,6 +41,12 @@ Enable the bundle in the kernel.:
 Add following config to your `config.yml`:
 
 	nfq_seo:
+	    cache:
+          # Set cache TTL, default is 0
+          ttl: ~
+          # Add more as they will be added to chain, adapter order is important
+          adapters:
+              - nfq_seo.cache.adapter.array
 	    default_locale: %locale%
 	    slug_separator: -
 	    path_separator: /
@@ -63,8 +66,6 @@ Add following config to your `config.yml`:
 	            name:
 	                keywords:             product keywords that you need for better SEO
 	                description:          website.welcome.description
-	                robots:               { value: 'index, follow', translatable: false }
-	                viewport:             { value: 'width=device-width, initial-scale=1.0', translatable: false }
 	            property:
 	                # Facebook application settings
 	                'fb:app_id':          XXXXXX
@@ -76,14 +77,6 @@ Add following config to your `config.yml`:
 	                'og:description':     ~
 	            charset:
 	                 'UTF-8':     ''
-
-This bundle also depends on `TedivmStashBundle`, so add following configuration for caching:
-
-    stash:
-        default_cache: seo
-        caches:
-            seo:
-                drivers: [ Ephemeral ]
 
 ###Generators
 
@@ -100,8 +93,6 @@ To define such service you have to use following service configuration in your `
 	foo_seo_slug_generator_service:
 		#It's a good practice to put SEO related classes under separate namespace
         class: AcmeDemoBundle\Service\Seo\SlugGenerator
-        calls:
-            - [setEntityManager, ["@doctrine.orm.entity_manager"]]
 		#	- Add any other service dependencies. But be aware that setter injection must be used
         tags:
 			#Every property of this tag is required

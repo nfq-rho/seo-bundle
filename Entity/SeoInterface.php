@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -16,116 +17,47 @@ namespace Nfq\SeoBundle\Entity;
  */
 interface SeoInterface
 {
-    const STATUS_INVALID = 0;
-    const STATUS_OK = 1;
-    const STATUS_REDIRECT = 2;
+    public const STATUS_INVALID = 0;
+    public const STATUS_OK = 1;
+    public const STATUS_REDIRECT = 2;
 
-    /**
-     * @param string $stdUrl
-     * @return $this
-     */
-    public function setStdUrl($stdUrl);
+    public function setStdUrl(string $stdUrl): SeoInterface;
 
-    /**
-     * @return string
-     */
-    public function getStdUrl();
+    public function getStdUrl(): string;
 
-    /**
-     * @param bool $decode
-     * @return string
-     */
-    public function getParsedStdUrl($decode = false);
+    public function getParsedStdUrl(bool $decode = false): array;
     
-    /**
-     * @param string $stdPathHash
-     * @return $this
-     */
-    public function setStdPathHash($stdPathHash);
+    public function setStdPathHash(int $stdPathHash): SeoInterface;
 
-    /**
-     * @return string
-     */
-    public function getStdPathHash();
+    public function getStdPathHash(): int;
 
-    /**
-     * @param string $seoUrl
-     * @return $this
-     */
-    public function setSeoUrl($seoUrl);
+    public function setSeoUrl(string $seoUrl): SeoInterface;
 
-    /**
-     * @return string
-     */
-    public function getSeoUrl();
+    public function getSeoUrl(): string;
 
-    /**
-     * @param int $entityId
-     * @return $this
-     */
-    public function setEntityId($entityId);
+    public function setEntityId(int $entityId): SeoInterface;
 
-    /**
-     * @return int
-     */
-    public function getEntityId();
+    public function getEntityId(): int;
 
-    /**
-     * @param string $locale
-     * @return $this
-     */
-    public function setLocale($locale);
+    public function setLocale(string $locale): SeoInterface;
 
-    /**
-     * @return string
-     */
-    public function getLocale();
+    public function getLocale(): string;
 
-    /**
-     * @param string $status
-     * @return $this
-     */
-    public function setStatus($status);
+    public function setStatus(int $status): SeoInterface;
 
-    /**
-     * @return string
-     */
-    public function getStatus();
+    public function getStatus(): int;
 
-    /**
-     * @param string $routeName
-     * @return $this
-     */
-    public function setRouteName($routeName);
+    public function setRouteName(string $routeName): SeoInterface;
 
-    /**
-     * @return string
-     */
-    public function getRouteName();
+    public function getRouteName(): string;
 
-    /**
-     * @param string $seoPathHash
-     * @return $this
-     */
-    public function setSeoPathHash($seoPathHash);
+    public function setSeoPathHash(int $seoPathHash): SeoInterface;
 
-    /**
-     * @return string
-     */
-    public function getSeoPathHash();
+    public function getSeoPathHash(): int;
 
-    /**
-     * @return bool
-     */
-    public function isOK();
+    public function isOK(): bool;
 
-    /**
-     * @return bool
-     */
-    public function isInvalidated();
+    public function isInvalidated(): bool;
 
-    /**
-     * @return bool
-     */
-    public function isInvalid();
+    public function isInvalid(): bool;
 }

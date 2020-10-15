@@ -1,0 +1,8 @@
+services:
+    nfq_seo.cache.adapter.array:
+        parent: cache.adapter.array
+        arguments:
+            $storeSerialized: false
+        tags:
+            - { name: cache.pool, clearer: cache.default_clearer }
+            - { name: monolog.logger, channel: cache }

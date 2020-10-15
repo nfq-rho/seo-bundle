@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  * This file is part of the "NFQ Bundles" package.
  *
@@ -8,4 +9,12 @@
  * file that was distributed with this source code.
  */
 
-require_once __DIR__ . '/autoload.php';
+namespace Nfq\SeoBundle\Controller;
+
+/**
+ * Interface SeoAwareControllerInterface
+ * @package Nfq\SeoBundle\Controller
+ */
+interface SeoAwareControllerInterface
+{
+}
